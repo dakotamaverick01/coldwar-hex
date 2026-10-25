@@ -30,6 +30,16 @@ Read this first every chat. It is the current state and overrides older docs (in
 - Other AIs (Grok, Gemini): allowed for art prompts, image generation and overflow brainstorming when Claude usage is low. They do not make decisions; their output goes into the repo and gets reviewed by Claude. Prompts for them must be self-contained and copy-paste ready. This relaxes the old "art only" rule. (2026-10-25)
 - Structure: repo is the single source of truth (START_HERE.md, HANDOFF.md, one plan). Haiku acts as chief of staff (status, tasks, decision log, git, work orders). Sonnet builds. Opus only for look and rules calls. (2026-10-25)
 
+## GAME DESIGN LOCKED (2026-10-25, full design in PLAN.md "GAME DESIGN v1")
+- Player side: NATO first (Warsaw Pact side may come later). (2026-10-25)
+- Win condition: delay. Hold out a set number of turns; score from ground held, objectives kept and enemy losses; lose on a breakthrough. (2026-10-25)
+- Turns: you move, then they move (Panzer General style). (2026-10-25)
+- Battle length: 20-30 minutes, about 12-15 turns. The first 72 hours become a campaign of 3 battles. (2026-10-25)
+- Combat: simple rules with the likely result shown before you commit. (2026-10-25)
+- Campaign: losses and veterancy carry over between battles. (2026-10-25)
+- Escalation mechanic: LEFT OUT. Pure conventional war. (2026-10-25)
+- Tone: grounded tension. Quiet beauty broken by violence. (2026-10-25)
+
 ## SUPERSEDED (kept for history)
 - "Dawn at the Narrows", ancient era, one-battle diorama (2026-10-24). Dropped 2026-10-25.
 - Misty cold dawn as the fixed mood; low cinematic default camera; "stylized high-end miniature" land. All replaced 2026-10-25 after the look test and the Field of Command reference.
@@ -38,7 +48,7 @@ Read this first every chat. It is the current state and overrides older docs (in
 - Game name (must be original).
 - Tech stack (proposal: Three.js, a free 3D library for web pages; hosted free on GitHub Pages).
 - Vehicle models: decide when we reach them. Default plan is simple stylized vehicles built in code, CC0 packs for scenery.
-- Unit roster, rules, enemy AI, supply, escalation mechanic.
+- Exact unit roster and numbers (draft in PLAN.md; historical units in the Hof Gap sector still to be verified), enemy AI details, supply.
 - Camera style and cinematic moments.
 - Art palette and mood board.
 - CWG3 files: not found here. Builder may drop in a zip or repo link for review.
@@ -56,8 +66,8 @@ Measured (software browser): about 720,000 triangles and 82 draw calls per frame
 - No new outside assets (all shapes, textures and effects are made by code).
 
 ## NEXT
-1. Builder opens look-test.html on his iPhone (look D opens first) and reports the fps number and what to change.
-2. Then Task 0 (Sonnet, small): real Hof Gap elevation and OpenStreetMap data.
+1. DONE: builder checked look D on his iPhone: steady 59-60 fps, "looks stunning"; wants real textures and shaders later. Performance headroom confirmed.
+2. Next: Task 0 (Sonnet, small): real Hof Gap elevation and OpenStreetMap data.
 3. Then Task 2: real terrain engine in look D (reuse the ground shader and props code from look-test.html).
 
 ## HANDOFF (any AI can pick up from here)
@@ -65,7 +75,7 @@ Measured (software browser): about 720,000 triangles and 82 draw calls per frame
 - Current phase: Phase 1 step 1 DONE (iPhone link confirmed 2026-10-25). Look test (Task 1) BUILT 2026-10-25 at look-test.html; look direction now decided (clear morning, Field of Command reference). Task 1b (look D) DONE 2026-10-25. Next: builder's iPhone check, then Task 0. The backup branch "backup/before-look-test" holds the state before it.
 - Builder has never used GitHub or a terminal. Describe only what to click or look at; never say commit, push, branch, repo, or terminal without a plain-language definition first.
 - Rules: plain English, define jargon, small playable steps, stop after each phase for a yes, one-line self-check with every change, original names, CC0/own assets only logged in ASSET_CREDITS.md, no mention of the builder's profession anywhere public.
-- Next 3 tasks: (1) builder's iPhone check of look D, (2) Task 0: real Hof Gap terrain data (Sonnet; ask builder before starting), (3) Task 2: terrain engine in look D. Then three unit types, select and move.
+- Next 3 tasks: (1) DONE: iPhone check of look D (59-60 fps), (2) Task 0: real Hof Gap terrain data (Sonnet; ask builder before starting), (3) Task 2: terrain engine in look D. Then three unit types, select and move.
 - Testing tip: look-test.html has a test hook (window.__lt: snapLook, showHexAt, pause) and "?pr=2" in the address locks the resolution for screenshots.
 
 ## Housekeeping

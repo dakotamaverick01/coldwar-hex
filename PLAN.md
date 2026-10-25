@@ -105,3 +105,75 @@ HOW TO TEST: write a tiny check page, data-check.html, that draws the height gri
 
 STOP RULES: after two failed fixes on the same problem, stop and ask me. Do not exceed this scope. Before you start, tell me in two sentences what you will do. At the end: push to main, update START_HERE.md (NEXT and HANDOFF), and report what to open on my phone (the link plus /data-check.html), file sizes, licences, and your rough estimate of the usage this task consumed. Then stop for my yes.
 ```
+
+* * *
+
+# GAME DESIGN v1 (drafted 2026-10-25 by Opus; LOCKED items are listed in START_HERE.md)
+Numbers here are starting values for playtesting, not locked.
+
+## The pitch
+You command a NATO brigade holding the Hof Gap in the first 72 hours of a war that never happened. You cannot destroy the Soviet army. You win by trading ground for time: making every kilometre cost them until reinforcements arrive. Tone: grounded tension. A beautiful, quiet autumn valley is slowly torn apart.
+
+## Scale
+- Hex: about 1 km across. Battle map: about 14 x 20 hexes cut from the real Hof Gap data (Task 0).
+- Turn: about 2 hours of game time. A battle is 12-15 turns, 20-30 minutes of play.
+- Unit: one battalion (or squadron), shown as 3-5 models. Models left = strength left.
+
+## Campaign: 3 battles across the first 72 hours
+1. "Border dawn" (day 1): covering force. Spot the main thrust and delay at the border, then pull back before you are trapped.
+2. "The river line" (day 2): defend along the Saale and its bridges. Engineers can blow bridges.
+3. "The last ridge" (day 3): hold the final good ground until reinforcements arrive on the last turn.
+Between battles: losses carry over. Limited replacement points rebuild some models. Units that survive fights earn veterancy (1-3 stars: better attack, defence and spotting).
+
+## Turn structure (you go, then they go)
+1. Your turn: each unit can move and then attack (or attack and stay). Off-map support (artillery strikes, later helicopter strikes) has a few uses per turn.
+2. Enemy turn: the AI moves, attacks and brings on new waves.
+3. Clock advances: time of day changes, weather may change, scoring is updated.
+
+## Combat (simple, odds shown)
+- Each unit has Attack, Defence, Range (1 = adjacent, 2-3 for artillery and missiles) and Move.
+- Modifiers: forest and towns +defence, ridges +defence and +spotting, river crossing -attack, dug in (did not move last turn) +defence, flanking (attacked from 2+ sides) +attack, veterancy stars.
+- Tap an enemy and the game shows the likely result before you commit, e.g. "Likely: enemy loses 2, you lose 1". A small random spread, never a surprise wipeout.
+- Results: lose models; a badly beaten unit may be forced to retreat one hex.
+- Zone of control: units must stop when they move next to an enemy, so lines can be held.
+
+## Fog of war and recon
+- Enemies are hidden until spotted. Normal spotting: 2 hexes. Recon units: 4. Ridges +1. Forest and towns hide units unless adjacent. Night: spotting halved.
+- Spotted-then-lost enemies leave a faded "last seen" marker.
+- Finding the main enemy thrust is half the game.
+
+## The enemy (first AI)
+- Comes in echelons: a first wave, then a second, heavier wave a few turns later (you see its dust on the horizon first).
+- Simple goals: push toward objectives and the far map edge, attack weak or isolated units, mass on the weakest part of your line.
+- Breakthrough rule: if enough enemy units exit your rear map edge, you lose.
+
+## Scoring (delay)
+- Survive to the final turn. Points each turn for objective hexes still held (towns, bridges, crossroads), plus points for enemy losses, minus points for your losses.
+- Result tiers: Decisive delay / Delay / Pyrrhic / Breakthrough (loss).
+
+## Units, first draft (historical units in the Hof Gap sector to be verified before locking)
+NATO (US armoured cavalry and West German forces):
+- Tank battalion (M1 Abrams or Leopard 2): strong attack, fast.
+- Mechanised infantry (Bradley or Marder): balanced, good in towns and forest.
+- Artillery (M109): range 3, cannot hold ground.
+- Later: anti-tank missile company (TOW), recon (spots 4), engineers (dig in fast, blow bridges), attack helicopters (off-map strike).
+Warsaw Pact:
+- Tank regiment battalions (T-72/T-64), motor rifle (BMP), recon (BRDM), artillery and rockets (2S1, BM-21), later Hind helicopters.
+First playable build uses only 3 types per side: tanks, mechanised infantry, artillery.
+
+## How the world feels
+- Time passes: the clock runs with the turns. Clear morning, bright day, golden dusk, one hard night turn. Misty dawn and rain arrive as weather.
+- The map remembers: burning villages keep smoking, cratered roads, track marks across fields, blown bridges stay down, wrecks stay where they died.
+- Camera: high tabletop view to plan; swoops down low for each attack, then lifts back.
+- Life, then its absence: civilian cars fleeing on turn 1-2, farm smoke, birds; by day 2 empty villages and dust columns.
+- Radio log: short text lines from your units ("Bravo 2-6: contact, tanks, grid north of the church"). Text only. Sound comes last (hard rule).
+
+## Build order (each phase ends with something playable on the iPhone and a stop for the builder's yes)
+A. Real terrain: Task 0 (data), then the hex map on real Hof Gap terrain in look D.
+B. Units: 3 types per side, select, move with terrain costs, zone of control.
+C. Combat: odds preview, results, retreat, the attack camera swoop.
+D. Enemy AI and waves, turn clock, win/lose. = Battle 1 playable end to end (target: the week's goal).
+E. Fog of war and recon.
+F. World reacts: damage, smoke, time of day, radio log.
+G. Campaign (3 battles, carry-over, veterancy), more unit types.
+H. Polish: real textures and shaders, vehicle models, effects. Sound last.
