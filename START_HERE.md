@@ -16,6 +16,8 @@ Read this first every chat. It is the current state and overrides older docs (in
 - Camera: tilted overview that can swoop down low for action moments. (2026-10-25)
 - Mood: cold autumn dawn, mist, low gold sun, wet earth. Fixed mood for now. A day/night cycle and changing weather are LOW priority because they change slowly. (2026-10-25)
 - Wow factor is the goal. Motion wanted: moving units with dust, tracers and explosions; wind in trees, flowing river, village smoke; ambient life (birds, traffic, sound). Pick a few hero effects per phone budget instead of everything at once. (2026-10-25)
+- Sound and music come LAST in this project. Hard rule from the builder. (2026-10-25)
+- Hero effects for the look test: battle swoop (dust, tracers, smoke), valley mist with low gold light, wind in forests and flowing river. (2026-10-25)
 - Before building the map, do a short "look test": 2-3 versions of the same terrain patch on the iPhone link so the builder reacts to pictures. (2026-10-25)
 - Source of truth: a GitHub repo. Keep a handoff note in the repo so work can continue if usage runs out. (2026-10-25)
 - Budget: steady over a few weeks, about 90% of weekly usage, the rest kept for his job. Haiku for filing and git, Sonnet for building, Opus for look and rules. Tell him before switching. (2026-10-25)
