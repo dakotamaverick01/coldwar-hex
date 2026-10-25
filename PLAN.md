@@ -180,3 +180,32 @@ Goal: prove the soldier pipeline before gameplay depends on it.
 3. Export as glTF (a standard 3D file for the web), under 1 MB each.
 4. Phone test: a page showing 150 soldiers at once on the look-test terrain, mixed animations. If normal animated models are too slow, "bake" the animations into a texture (vertex animation texture: positions stored per frame so the graphics chip plays them cheaply). Report fps on the builder's iPhone.
 5. Stop and show screenshots up close and at game camera height before going further.
+
+* * *
+
+# HISTORY CHECK (2026-10-25, quick research; confidence noted)
+- CONFIRMED: the US 2nd Armored Cavalry Regiment watched the Bavarian border. Its 2nd Squadron (based in Bamberg) ran border camps at Coburg and Hof (usarmygermany.com, 2nd ACR history page). VII Corps defended the Hof approach behind it (globalsecurity.org, "Hof corridor").
+- TERRAIN (globalsecurity.org): forested highlands; good east-west roads for the attacker; forests and high ground give the defender observation, channeling and ambush; corridor about 50 km wide.
+- NOT YET CONFIRMED: the exact 1985 vehicles of the 2nd ACR. Sources around 1977-81 show M60 tanks, M113 carriers and TOW vehicles; M1 Abrams and M3 Bradley came in the mid-1980s (date not found). Design choice below.
+- NOT YET CONFIRMED: which Soviet army would have attacked through Hof. The nearest big Soviet formation was the 1st Guards Tank Army (HQ Dresden, role "breakthrough and exploitation"); the 8th Guards Army faced Fulda. Game uses a generic Soviet motor rifle battalion with tank support until verified.
+- West German units in the sector: not found yet.
+
+## Your company: a cavalry troop (US cavalry companies are called "troops")
+Draft, 12 units (equipment era to confirm with the builder: classic M60/M113 or new M1/Bradley):
+- Troop command vehicle (1)
+- Tank platoon: 3 tanks (M60A3, or M1)
+- Scout section: 3 scout carriers (M113, or M3 Bradley), each can drop a 4-6 man scout team (3 teams)
+- Anti-tank section: 2 TOW missile vehicles (M901 ITV)
+- Attached engineer squad (1): digs in, wires and blows bridges
+- Off-map: troop mortars, 3-4 fire missions per mission (high explosive or smoke)
+
+# MISSION 2 "THE BRIDGE" (first playable mission, paper design v1)
+- Map: about 20 x 28 hexes (about 2.5 km), a real Saale crossing picked from Task 0 data. River runs across the middle. One stone road bridge. North bank: open fields, hedgerows, a farm, a low ridge at the far edge. South bank (yours): a small village with a church, stone walls, then a forested ridge behind you.
+- Start: most of your troop deploys on the south bank. Two scout teams with carriers start forward on the north bank as a screen: they must spot and slow the enemy, then get back across.
+- Goal: the engineers need the bridge hex held for 4 turns in total (engineer squad on the bridge, not suppressed) to wire it. Once wired, "Blow bridge" is an action. Then survive to turn 12.
+- Enemy (about 2.5 to 1): wave 1 on turn 1: 2 recon cars (BRDM-2) and a motor rifle platoon (3 BMPs and 3 infantry squads). Wave 2 on turn 4: a motor rifle company (3 BMPs, 3 squads) with 2 tanks (T-72). Wave 3 on turn 7: a tank company (4 T-72s). From turn 5, enemy artillery shells and smokes your bank before each push.
+- Enemy AI goals: recon finds your positions; BMPs rush the bridge; tanks overwatch from the north ridge; smoke before every crossing attempt.
+- Tension built in: blow the bridge too early (before turn 5) and any scout team still on the north bank is stranded; too late and enemy tanks cross. Timing is the game.
+- Results: Outstanding: bridge blown, no enemy crossed, at least 9 of 12 units survive. Success: bridge blown before 3 enemy units cross. Costly: bridge blown but you lost more than half. Failed: engineers lost or enemy holds the south end of the bridge at turn 12.
+- Teaches: screening and falling back, overwatch on the bridge, cover and flanking, suppression with tanks and the machine guns on the carriers, garrisoning the church and houses.
+- Length: 12 turns, about 25 minutes.
