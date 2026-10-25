@@ -49,6 +49,8 @@ Read this first every chat. It is the current state and overrides older docs (in
 
 - LOCKED 2026-10-25: Map data decision. The public OpenStreetMap servers failed twice from the builder's phone (busy, 502). We build Task 2 on the real elevation data only. River, roads, bridge and buildings are labelled stand-ins placed by hand from the terrain. Real OSM data (osm-fetch.html, or an overpass-turbo.eu export from a laptop, or a retry when Europe is asleep) can be swapped in later without redoing the map. Reopen only if the stand-ins block the game.
 
+- LOCKED 2026-10-25: Cavalry troop equipment is a historical mix of older and newer vehicles (for example M60 and M113 alongside some M1 and Bradley). A wide range of unit types is a hallmark of the game. Exact roster is set when units are built.
+
 ## NOT YET (undecided)
 - Game name (must be original).
 - Tech stack (proposal: Three.js, a free 3D library for web pages; hosted free on GitHub Pages).
