@@ -847,7 +847,7 @@ const terrain = (() => {
   g.setIndex(new THREE.BufferAttribute(idx, 1));
   g.computeVertexNormals();
   const m = new THREE.Mesh(g, patch(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93, metalness: 0 }), { wet: true, hex: true, ground: true }));
-  m.receiveShadow = true; m.castShadow = true;
+  m.receiveShadow = true; m.castShadow = false;   // gentle hills: self-shadowing is not worth drawing the land twice
   window.__terrainTris = idx.length / 3;
   return m;
 })();
@@ -979,7 +979,7 @@ function chunked(geo, spots, palette, scaleRange, kind) {
   const out = [];
   for (const list of cells.values()) { const im = makeTrees(geo.clone(), list, palette, scaleRange);
     im.geometry.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(list.length).fill(1), 1));
-    addFade(im.material, true); addFade(im.customDepthMaterial, true); im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
+    addFade(im.material, true);   // shadow pass stays solid: the simple tree always casts the shadow im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
     if (kind) list.forEach((sp, i) => lodRefs[kind].push({ x: sp[0], z: sp[2], im, i, f: 0 })); }
   return out;
 }
@@ -1171,7 +1171,7 @@ function leafMaterial() {
   return m;
 }
 const detailSets = { spruce: [], broad: [] };
-const DETAIL_CAP = { spruce: 50, broad: 35 };   // per shape variant
+const DETAIL_CAP = { spruce: 42, broad: 30 };   // per shape variant
 {
   const barkMatS = patch(new THREE.MeshLambertMaterial({ map: barkTex, vertexColors: true, color: 0x8a6e58 }), { wind: true });
   const barkMatB = patch(new THREE.MeshLambertMaterial({ map: barkTex, vertexColors: true, color: 0x8f8678 }), { wind: true });
@@ -1201,7 +1201,7 @@ const DETAIL_CAP = { spruce: 50, broad: 35 };   // per shape variant
     bg.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1));
     lg.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1));
     leaves.customDepthMaterial = leafDepth; bark.customDepthMaterial = barkDepth;
-    for (const m of [bark, leaves]) { m.count = 0; m.frustumCulled = false; m.castShadow = m.receiveShadow = true; scene.add(m); }
+    for (const m of [bark, leaves]) { m.count = 0; m.frustumCulled = false; m.castShadow = false; m.receiveShadow = true; scene.add(m); }   // the simple tree keeps casting the shadow (much cheaper)
     leaves.setColorAt(0, new THREE.Color(1, 1, 1)); leaves.instanceColor.needsUpdate = true;
     detailSets[v.kind].push({ bark, leaves, cap });
   }
@@ -1590,7 +1590,7 @@ resize();
 
 const stats = document.getElementById('stats');
 const frameMs = [], sceneInfo = { calls: 0, tris: 0 };
-let lastT = performance.now(), lastAdjust = lastT, frames = 0;
+let lastT = performance.now(), lastAdjust = lastT, lastDrop = -1e9, frames = 0;
 const tags = [[document.getElementById('tag0'), bridgeLabelPos], [document.getElementById('tag1'), villageLabelPos], [document.getElementById('tag2'), farmLabelPos]];
 window.__lt = { U, lodRefs, lots, flyTo, VIEWS, cam, height, riverZ, VIL, BX, BZ, BOARD, showHexAt: (x, z) => { U.uTouch.value.set(x, height(x, z), z); touchHeld = true; touchFade = 1; },
   hideHex: () => { touchHeld = false; touchFade = 0; }, setGrid: (on) => { gridOn = on; gridBtn.classList.toggle('on', on); },
@@ -1631,11 +1631,13 @@ function frame() {
 
   if (!FIXED_PR && now - lastAdjust > 2500 && frameMs.length >= 60) {
     const avg = frameMs.reduce((a, b) => a + b, 0) / frameMs.length;
-    // first fewer detailed trees, then lower sharpness
-    if (avg > 21 && lodScale > 0.35) { lodScale = Math.max(0.35, lodScale * 0.8); lodLast.t = -1; lastAdjust = now; }
-    else if (avg > 38 && pr > 1) { pr = Math.max(1, pr - 0.25); resize(); lastAdjust = now; }
-    else if (avg < 17.5 && lodScale < 1 && now - lastAdjust > 5000) { lodScale = Math.min(1, lodScale * 1.15); lodLast.t = -1; lastAdjust = now; }
-    else if (avg < 20 && pr < MAX_PR && now - lastAdjust > 8000) { pr = Math.min(MAX_PR, pr + 0.25); resize(); lastAdjust = now; }
+    // aim for 55+ fps: first fewer detailed trees, then a little less sharpness; recover when there is headroom
+    if (avg > 19 && lodScale > 0.5) { lodScale = Math.max(0.5, lodScale * 0.8); lodLast.t = -1; lastAdjust = lastDrop = now; }
+    else if (avg > 19 && pr > 1.25) { pr = Math.max(1.25, pr - 0.25); resize(); lastAdjust = lastDrop = now; }
+    else if (avg < 17.3 && now - lastDrop > 20000 && now - lastAdjust > 6000) {   // 60 fps steady for a while: try a step back up
+      if (pr < MAX_PR) { pr = Math.min(MAX_PR, pr + 0.25); resize(); lastAdjust = now; }
+      else if (lodScale < 1) { lodScale = Math.min(1, lodScale * 1.15); lodLast.t = -1; lastAdjust = now; }
+    }
   }
   if (frames % 15 === 0) {
     const avg = frameMs.reduce((a, b) => a + b, 0) / frameMs.length;

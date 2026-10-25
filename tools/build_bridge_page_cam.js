@@ -143,7 +143,7 @@ resize();
 
 const stats = document.getElementById('stats');
 const frameMs = [], sceneInfo = { calls: 0, tris: 0 };
-let lastT = performance.now(), lastAdjust = lastT, frames = 0;
+let lastT = performance.now(), lastAdjust = lastT, lastDrop = -1e9, frames = 0;
 const tags = [[document.getElementById('tag0'), bridgeLabelPos], [document.getElementById('tag1'), villageLabelPos], [document.getElementById('tag2'), farmLabelPos]];
 window.__lt = { U, lodRefs, lots, flyTo, VIEWS, cam, height, riverZ, VIL, BX, BZ, BOARD, showHexAt: (x, z) => { U.uTouch.value.set(x, height(x, z), z); touchHeld = true; touchFade = 1; },
   hideHex: () => { touchHeld = false; touchFade = 0; }, setGrid: (on) => { gridOn = on; gridBtn.classList.toggle('on', on); },
@@ -184,11 +184,13 @@ function frame() {
 
   if (!FIXED_PR && now - lastAdjust > 2500 && frameMs.length >= 60) {
     const avg = frameMs.reduce((a, b) => a + b, 0) / frameMs.length;
-    // first fewer detailed trees, then lower sharpness
-    if (avg > 21 && lodScale > 0.35) { lodScale = Math.max(0.35, lodScale * 0.8); lodLast.t = -1; lastAdjust = now; }
-    else if (avg > 38 && pr > 1) { pr = Math.max(1, pr - 0.25); resize(); lastAdjust = now; }
-    else if (avg < 17.5 && lodScale < 1 && now - lastAdjust > 5000) { lodScale = Math.min(1, lodScale * 1.15); lodLast.t = -1; lastAdjust = now; }
-    else if (avg < 20 && pr < MAX_PR && now - lastAdjust > 8000) { pr = Math.min(MAX_PR, pr + 0.25); resize(); lastAdjust = now; }
+    // aim for 55+ fps: first fewer detailed trees, then a little less sharpness; recover when there is headroom
+    if (avg > 19 && lodScale > 0.5) { lodScale = Math.max(0.5, lodScale * 0.8); lodLast.t = -1; lastAdjust = lastDrop = now; }
+    else if (avg > 19 && pr > 1.25) { pr = Math.max(1.25, pr - 0.25); resize(); lastAdjust = lastDrop = now; }
+    else if (avg < 17.3 && now - lastDrop > 20000 && now - lastAdjust > 6000) {   // 60 fps steady for a while: try a step back up
+      if (pr < MAX_PR) { pr = Math.min(MAX_PR, pr + 0.25); resize(); lastAdjust = now; }
+      else if (lodScale < 1) { lodScale = Math.min(1, lodScale * 1.15); lodLast.t = -1; lastAdjust = now; }
+    }
   }
   if (frames % 15 === 0) {
     const avg = frameMs.reduce((a, b) => a + b, 0) / frameMs.length;

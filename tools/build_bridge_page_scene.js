@@ -73,7 +73,7 @@ const terrain = (() => {
   g.setIndex(new THREE.BufferAttribute(idx, 1));
   g.computeVertexNormals();
   const m = new THREE.Mesh(g, patch(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93, metalness: 0 }), { wet: true, hex: true, ground: true }));
-  m.receiveShadow = true; m.castShadow = true;
+  m.receiveShadow = true; m.castShadow = false;   // gentle hills: self-shadowing is not worth drawing the land twice
   window.__terrainTris = idx.length / 3;
   return m;
 })();
@@ -205,7 +205,7 @@ function chunked(geo, spots, palette, scaleRange, kind) {
   const out = [];
   for (const list of cells.values()) { const im = makeTrees(geo.clone(), list, palette, scaleRange);
     im.geometry.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(list.length).fill(1), 1));
-    addFade(im.material, true); addFade(im.customDepthMaterial, true); im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
+    addFade(im.material, true);   // shadow pass stays solid: the simple tree always casts the shadow im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
     if (kind) list.forEach((sp, i) => lodRefs[kind].push({ x: sp[0], z: sp[2], im, i, f: 0 })); }
   return out;
 }

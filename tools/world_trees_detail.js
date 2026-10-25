@@ -67,7 +67,7 @@ function leafMaterial() {
   return m;
 }
 const detailSets = { spruce: [], broad: [] };
-const DETAIL_CAP = { spruce: 50, broad: 35 };   // per shape variant
+const DETAIL_CAP = { spruce: 42, broad: 30 };   // per shape variant
 {
   const barkMatS = patch(new THREE.MeshLambertMaterial({ map: barkTex, vertexColors: true, color: 0x8a6e58 }), { wind: true });
   const barkMatB = patch(new THREE.MeshLambertMaterial({ map: barkTex, vertexColors: true, color: 0x8f8678 }), { wind: true });
@@ -97,7 +97,7 @@ const DETAIL_CAP = { spruce: 50, broad: 35 };   // per shape variant
     bg.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1));
     lg.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1));
     leaves.customDepthMaterial = leafDepth; bark.customDepthMaterial = barkDepth;
-    for (const m of [bark, leaves]) { m.count = 0; m.frustumCulled = false; m.castShadow = m.receiveShadow = true; scene.add(m); }
+    for (const m of [bark, leaves]) { m.count = 0; m.frustumCulled = false; m.castShadow = false; m.receiveShadow = true; scene.add(m); }   // the simple tree keeps casting the shadow (much cheaper)
     leaves.setColorAt(0, new THREE.Color(1, 1, 1)); leaves.instanceColor.needsUpdate = true;
     detailSets[v.kind].push({ bark, leaves, cap });
   }
