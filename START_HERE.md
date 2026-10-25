@@ -12,6 +12,11 @@ Read this first every chat. It is the current state and overrides older docs (in
 - iPhone link works (confirmed by builder 2026-10-25): https://dakotamaverick01.github.io/coldwar-hex/ (GitHub Pages, auto-updates on every push to main). (2026-10-25)
 - iPhone link works (confirmed by builder 2026-10-25): https://dakotamaverick01.github.io/coldwar-hex/ (GitHub Pages, updates on every push to main). (2026-10-25)
 - First map: a real region, the Hof Gap in northeast Bavaria (secondary approach, low pressure to be perfect). No more invented places. Real terrain from public-domain elevation data; rivers, forests and towns from OpenStreetMap (credit required, log in ASSET_CREDITS.md). Facts about the region to be verified before locking details. (2026-10-25)
+- WORLD LOOK (decided 2026-10-25): a living, immersive 3D map, NOT a painted map. Terrain is one continuous landscape; the hex grid is hidden and fades in softly only when needed (near the finger or a selected unit). (2026-10-25)
+- Camera: tilted overview that can swoop down low for action moments. (2026-10-25)
+- Mood: cold autumn dawn, mist, low gold sun, wet earth. Fixed mood for now. A day/night cycle and changing weather are LOW priority because they change slowly. (2026-10-25)
+- Wow factor is the goal. Motion wanted: moving units with dust, tracers and explosions; wind in trees, flowing river, village smoke; ambient life (birds, traffic, sound). Pick a few hero effects per phone budget instead of everything at once. (2026-10-25)
+- Before building the map, do a short "look test": 2-3 versions of the same terrain patch on the iPhone link so the builder reacts to pictures. (2026-10-25)
 - Source of truth: a GitHub repo. Keep a handoff note in the repo so work can continue if usage runs out. (2026-10-25)
 - Budget: steady over a few weeks, about 90% of weekly usage, the rest kept for his job. Haiku for filing and git, Sonnet for building, Opus for look and rules. Tell him before switching. (2026-10-25)
 - Public material never mentions the builder's profession. (2026-10-25)
@@ -35,7 +40,7 @@ Phase 1 plan: scope, tech, repo and iPhone link setup, usage estimate. Builder s
 
 ## HANDOFF (any AI can pick up from here)
 - Project: turn-based 3D hex wargame, 1985 West Germany, phone-first, web (Three.js).
-- Current phase: Phase 1 step 1 DONE (iPhone link confirmed 2026-10-25). Step 2 (3D hex map of the Hof Gap) awaiting builder go-ahead.
+- Current phase: Phase 1 step 1 DONE (iPhone link confirmed 2026-10-25). Look is being decided first; a look test comes before the full map. Builder will switch to Opus for look decisions.
 - Builder has never used GitHub or a terminal. Describe only what to click or look at; never say commit, push, branch, repo, or terminal without a plain-language definition first.
 - Rules: plain English, define jargon, small playable steps, stop after each phase for a yes, one-line self-check with every change, original names, CC0/own assets only logged in ASSET_CREDITS.md, no mention of the builder's profession anywhere public.
 - Next 3 tasks: (1) step 2: 3D hex map of the Hof Gap with real elevation (Sonnet; ask builder before starting), (2) step 3: three unit types, select and move, (3) step 5 look pass needs Opus (ask builder first).
