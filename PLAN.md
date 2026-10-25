@@ -95,9 +95,9 @@ You are my game-building partner on a hobby 3D turn-based Cold War hex strategy 
 SETUP (do first): attach my repo dakotamaverick01/coldwar-hex with push access, clone it, and read START_HERE.md (current state, overrides older docs) and PLAN.md. Work on main. Never force-push. End commits with the two attribution lines your environment provides.
 
 YOUR TASK: get real terrain data for the first map, the Hof Gap in northeast Bavaria, and save it in the repo as small files under /data. Do NOT change look-test.html or build any map yet.
-1. Pick the map box: the Saale valley around Hof, roughly 20 x 20 km. Check the location with a web search and tell me the box (corner latitudes and longitudes) before downloading anything big.
-2. Elevation: free, openly licensed elevation data (for example Copernicus 30 m, SRTM, or the public AWS "terrain tiles"). Shrink it to a grid of about 256 x 256 heights and save it in a compact form (a small binary or PNG height image plus a short JSON note of the box, size and height range). Target under 300 KB.
-3. Map features from OpenStreetMap: rivers and streams, main roads, railways, forest areas, villages and towns (names and outlines), simplified to keep the file small (target under 500 KB, GeoJSON or compact JSON).
+1. Pick the map box: the Hof Gap area around Hof and the Saale valley, roughly 15 x 15 km. Missions will each use a 2-3 km piece of it, so fine detail matters more than size. Check the location with a web search and tell me the box (corner latitudes and longitudes) before downloading anything big.
+2. Elevation: free, openly licensed elevation data (for example Copernicus 30 m, SRTM, or the public AWS "terrain tiles"). Keep the finest free resolution available (about 25-30 m per sample, so about 512 x 512 heights for the box) and save it in a compact form (a small binary or PNG height image plus a short JSON note of the box, size and height range). Target under 1 MB.
+3. Map features from OpenStreetMap: rivers and streams, all roads and tracks, railways, bridges, forest areas, hedgerows and walls if mapped, villages with individual building outlines, simplified to keep the file small (target under 2 MB, GeoJSON or compact JSON).
 4. Log every source in ASSET_CREDITS.md with its exact licence and the credit line it requires (OpenStreetMap requires "© OpenStreetMap contributors", ODbL).
 Network note: this workspace often blocks downloads from sites other than GitHub and package registries. Try once; if a site is blocked, do not try other routes around the block. Instead give me exact click-by-click steps to download one or two small files myself and attach them in the chat.
 
@@ -108,72 +108,66 @@ STOP RULES: after two failed fixes on the same problem, stop and ask me. Do not 
 
 * * *
 
-# GAME DESIGN v1 (drafted 2026-10-25 by Opus; LOCKED items are listed in START_HERE.md)
+# GAME DESIGN v2 (2026-10-25, replaces v1 the same day: scale moved down to a company; LOCKED items listed in START_HERE.md)
 Numbers here are starting values for playtesting, not locked.
 
 ## The pitch
-You command a NATO brigade holding the Hof Gap in the first 72 hours of a war that never happened. You cannot destroy the Soviet army. You win by trading ground for time: making every kilometre cost them until reinforcements arrive. Tone: grounded tension. A beautiful, quiet autumn valley is slowly torn apart.
+You command one NATO company in the Hof Gap through the first 72 hours of a war that never happened. Outnumbered 2-3 to 1 by a Soviet battalion, you fight 6-8 linked missions with the same squads: hold a bridge, spring an ambush, blow the bridge and escape, pull out a cut-off squad. Delay is the heart of every mission: you buy time, you do not win the war. Feel: turn-based Company of Heroes. Tone: grounded tension.
 
 ## Scale
-- Hex: about 1 km across. Battle map: about 14 x 20 hexes cut from the real Hof Gap data (Task 0).
-- Turn: about 2 hours of game time. A battle is 12-15 turns, 20-30 minutes of play.
-- Unit: one battalion (or squadron), shown as 3-5 models. Models left = strength left.
+- Hex: about 100-150 m across. A mission map: about 2-3 km, so roughly 20 x 28 hexes, cut from real Hof Gap terrain (a real village, bridge, ridge).
+- Turn: a few minutes of game time. A mission is 10-15 turns, 20-30 minutes of play.
+- Unit: a squad (about 9 soldiers, shown as 4-6 models) or a single vehicle. Squad models die as it takes losses.
+- You: 10-15 units. Enemy: 2-3 times that, arriving in waves.
 
-## Campaign: 3 battles across the first 72 hours
-1. "Border dawn" (day 1): covering force. Spot the main thrust and delay at the border, then pull back before you are trapped.
-2. "The river line" (day 2): defend along the Saale and its bridges. Engineers can blow bridges.
-3. "The last ridge" (day 3): hold the final good ground until reinforcements arrive on the last turn.
-Between battles: losses carry over. Limited replacement points rebuild some models. Units that survive fights earn veterancy (1-3 stars: better attack, defence and spotting).
+## Your company (first draft; historical details of US and West German units in the sector to be verified)
+- 6-9 infantry squads (some with anti-tank rockets), 2-4 tanks or infantry fighting vehicles, 1-2 support teams (machine gun, anti-tank missile team).
+- Off-map: a few mortar or artillery strikes per mission (kept simple; no resource economy).
+- Squads have names, veterancy (1-3 stars) and losses that carry between missions. Limited replacements between missions.
 
-## Turn structure (you go, then they go)
-1. Your turn: each unit can move and then attack (or attack and stay). Off-map support (artillery strikes, later helicopter strikes) has a few uses per turn.
-2. Enemy turn: the AI moves, attacks and brings on new waves.
-3. Clock advances: time of day changes, weather may change, scoring is updated.
+## A unit's turn: 2 action points (XCOM style)
+- Spend 2 points on: move + shoot, move twice (dash), shoot + reload, hunker down (big cover bonus), enter or leave a building, or set overwatch.
+- Overwatch: the unit watches an arc and fires at the first enemy that moves in its view during the enemy turn. Ambushes and covering roads come from this.
+- You move all your units, then the enemy moves all theirs.
 
-## Combat (simple, odds shown)
-- Each unit has Attack, Defence, Range (1 = adjacent, 2-3 for artillery and missiles) and Move.
-- Modifiers: forest and towns +defence, ridges +defence and +spotting, river crossing -attack, dug in (did not move last turn) +defence, flanking (attacked from 2+ sides) +attack, veterancy stars.
-- Tap an enemy and the game shows the likely result before you commit, e.g. "Likely: enemy loses 2, you lose 1". A small random spread, never a surprise wipeout.
-- Results: lose models; a badly beaten unit may be forced to retreat one hex.
-- Zone of control: units must stop when they move next to an enemy, so lines can be held.
+## Cover, suppression, buildings
+- Cover per hex edge: none, light (hedge, fence, crops, wreck), heavy (stone wall, building, ridge crest, dug-in). Cover lowers the chance to be hit.
+- Flanking: firing from a side with no cover ignores it. Moving to flank is the main tactical choice.
+- Suppression: incoming fire, even misses, adds suppression. Pinned squads lose an action point; broken squads can only crawl back or hunker down. Machine guns are the suppressors.
+- Garrisons: infantry can enter houses for heavy cover and wide views. Buildings take damage in stages (intact, holed, burning, rubble). Tanks and artillery can bring them down; rubble becomes light cover.
+- Tanks: strong front armour, weak sides and rear. Infantry with rockets ambush them from cover.
 
-## Fog of war and recon
-- Enemies are hidden until spotted. Normal spotting: 2 hexes. Recon units: 4. Ridges +1. Forest and towns hide units unless adjacent. Night: spotting halved.
-- Spotted-then-lost enemies leave a faded "last seen" marker.
-- Finding the main enemy thrust is half the game.
+## Odds shown before you commit
+- Tap a target and see the hit chance and likely effect, e.g. "62% hit, likely 2 casualties, will suppress". Small random spread, never a hidden rule.
 
-## The enemy (first AI)
-- Comes in echelons: a first wave, then a second, heavier wave a few turns later (you see its dust on the horizon first).
-- Simple goals: push toward objectives and the far map edge, attack weak or isolated units, mass on the weakest part of your line.
-- Breakthrough rule: if enough enemy units exit your rear map edge, you lose.
+## Fog of war and line of sight
+- You see only what your units can see. Forests, buildings and ridges block sight (real line of sight from the 3D terrain). Enemies last seen leave a faded marker.
+- Waves: the next enemy wave is announced by dust and engine noise in the radio log.
 
-## Scoring (delay)
-- Survive to the final turn. Points each turn for objective hexes still held (towns, bridges, crossroads), plus points for enemy losses, minus points for your losses.
-- Result tiers: Decisive delay / Delay / Pyrrhic / Breakthrough (loss).
-
-## Units, first draft (historical units in the Hof Gap sector to be verified before locking)
-NATO (US armoured cavalry and West German forces):
-- Tank battalion (M1 Abrams or Leopard 2): strong attack, fast.
-- Mechanised infantry (Bradley or Marder): balanced, good in towns and forest.
-- Artillery (M109): range 3, cannot hold ground.
-- Later: anti-tank missile company (TOW), recon (spots 4), engineers (dig in fast, blow bridges), attack helicopters (off-map strike).
-Warsaw Pact:
-- Tank regiment battalions (T-72/T-64), motor rifle (BMP), recon (BRDM), artillery and rockets (2S1, BM-21), later Hind helicopters.
-First playable build uses only 3 types per side: tanks, mechanised infantry, artillery.
+## Missions (campaign of 6-8, one company, first 72 hours)
+Draft list:
+1. Border dawn: watch the border crossing, spot the first column, fall back before it closes.
+2. The bridge: hold the stone bridge for 10 turns while engineers wire it, then blow it.
+3. Ambush on the forest road: destroy as much of a column as you can, then vanish.
+4. Night withdrawal: break contact and reach the pickup point in the dark.
+5. The village: hold the church and crossroads against a combined assault.
+6. Cut off: rescue a stranded squad across the river.
+7. The last ridge: hold until relief arrives on the final turn.
+Each mission: a main goal, a delay score (turns held, enemy losses), and your losses. Results: Outstanding / Success / Costly / Failed. A failed mission still moves the story on (the war does not wait), but you lose squads.
 
 ## How the world feels
-- Time passes: the clock runs with the turns. Clear morning, bright day, golden dusk, one hard night turn. Misty dawn and rain arrive as weather.
-- The map remembers: burning villages keep smoking, cratered roads, track marks across fields, blown bridges stay down, wrecks stay where they died.
-- Camera: high tabletop view to plan; swoops down low for each attack, then lifts back.
-- Life, then its absence: civilian cars fleeing on turn 1-2, farm smoke, birds; by day 2 empty villages and dust columns.
-- Radio log: short text lines from your units ("Bravo 2-6: contact, tanks, grid north of the church"). Text only. Sound comes last (hard rule).
+- Time of day runs across the campaign: clear morning, bright day, golden dusk, real night missions; mist and rain as weather.
+- The map remembers within a mission: burning houses, craters, wrecks, flattened fences, rubble.
+- Civilians fleeing in the first missions; empty villages later.
+- Camera: high tabletop view to plan; swoops low for shots, explosions and building collapses.
+- Radio log: short text lines from your squads. Text only; sound comes last (hard rule).
 
 ## Build order (each phase ends with something playable on the iPhone and a stop for the builder's yes)
-A. Real terrain: Task 0 (data), then the hex map on real Hof Gap terrain in look D.
-B. Units: 3 types per side, select, move with terrain costs, zone of control.
-C. Combat: odds preview, results, retreat, the attack camera swoop.
-D. Enemy AI and waves, turn clock, win/lose. = Battle 1 playable end to end (target: the week's goal).
-E. Fog of war and recon.
-F. World reacts: damage, smoke, time of day, radio log.
-G. Campaign (3 battles, carry-over, veterancy), more unit types.
-H. Polish: real textures and shaders, vehicle models, effects. Sound last.
+A. Real terrain: Task 0 (data for the whole Hof Gap area at fine detail), then one 2-3 km mission map in look D with small hexes.
+B. Units: 4 types (rifle squad, anti-tank squad, tank, enemy equivalents), select, move with 2 action points, terrain costs.
+C. Shooting: cover, hit chance preview, casualties, suppression, the camera swoop.
+D. Enemy AI and waves, turn limit, win/lose. = Mission 2 "The bridge" playable end to end (target for the first week).
+E. Fog of war, line of sight, overwatch.
+F. Garrisons and building damage.
+G. Campaign: mission chain, carry-over, veterancy, more unit types.
+H. Polish: real textures and shaders, vehicle and soldier models, effects. Sound last.

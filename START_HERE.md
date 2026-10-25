@@ -4,7 +4,6 @@ Read this first every chat. It is the current state and overrides older docs (in
 
 ## LOCKED (decided 2026-10-25)
 - Setting: late Cold War, hypothetical 1985 Central Front in West Germany. NATO vs Warsaw Pact. (2026-10-25)
-- Scale: operational level. Hex map, units are battalions, Panzer General style. (2026-10-25)
 - Play style: turn-based, solo vs computer opponent. (2026-10-25)
 - Look: real 3D hex terrain with elevation, not a flat painted map. Beauty comes mainly from lighting, fog, shadows, colour grading and terrain depth. (2026-10-25)
 - iPhone first: it must be playable and testable on the builder's iPhone from anywhere, via a private web link set up before features are built. This is the main lesson from CWG3. (2026-10-25)
@@ -15,7 +14,7 @@ Read this first every chat. It is the current state and overrides older docs (in
 - Camera: default high angle, about 50 degrees looking down, close to a tabletop view; swoops down low for action moments. (2026-10-25, after look test)
 - Mood: clear, bright autumn morning by default, crisp soft-edged shadows, light haze only far away. Misty dawn comes back later as an occasional weather option. Day/night cycle stays LOW priority. (2026-10-25, after look test)
 - Visual reference: Field of Command (an indie WWII game), from builder's screenshots. Reference only: we copy nothing (no assets, names or layouts), and the screenshots are NOT stored in the public repo. What we take from it: high camera, clear light, sandy textured ground, dense small props, clean realistic-leaning models, puffy smoke. (2026-10-25)
-- Units on the map: each battalion is shown as 3 to 5 small models (for example 3 tanks), so the map reads up close while rules stay battalion-level. (2026-10-25)
+- Units on the map: a squad is 4-6 soldier models; vehicles are single models. (2026-10-25)
 - First wow for the next build: textured ground and props (fences, telegraph poles, railway, hedgerows, grass tufts, tracks, rocks). (2026-10-25)
 - Smoke style: big puffy "cotton ball" clouds (cheap on phones, very readable). (2026-10-25)
 - Wow factor is the goal. Motion wanted: moving units with dust, tracers and explosions; wind in trees, flowing river, village smoke; ambient life (birds, traffic, sound). Pick a few hero effects per phone budget instead of everything at once. (2026-10-25)
@@ -30,18 +29,19 @@ Read this first every chat. It is the current state and overrides older docs (in
 - Other AIs (Grok, Gemini): allowed for art prompts, image generation and overflow brainstorming when Claude usage is low. They do not make decisions; their output goes into the repo and gets reviewed by Claude. Prompts for them must be self-contained and copy-paste ready. This relaxes the old "art only" rule. (2026-10-25)
 - Structure: repo is the single source of truth (START_HERE.md, HANDOFF.md, one plan). Haiku acts as chief of staff (status, tasks, decision log, git, work orders). Sonnet builds. Opus only for look and rules calls. (2026-10-25)
 
-## GAME DESIGN LOCKED (2026-10-25, full design in PLAN.md "GAME DESIGN v1")
-- Player side: NATO first (Warsaw Pact side may come later). (2026-10-25)
-- Win condition: delay. Hold out a set number of turns; score from ground held, objectives kept and enemy losses; lose on a breakthrough. (2026-10-25)
-- Turns: you move, then they move (Panzer General style). (2026-10-25)
-- Battle length: 20-30 minutes, about 12-15 turns. The first 72 hours become a campaign of 3 battles. (2026-10-25)
-- Combat: simple rules with the likely result shown before you commit. (2026-10-25)
-- Campaign: losses and veterancy carry over between battles. (2026-10-25)
-- Escalation mechanic: LEFT OUT. Pure conventional war. (2026-10-25)
+## GAME DESIGN LOCKED (2026-10-25, full design in PLAN.md "GAME DESIGN v2")
+- Scale: company level, turn-based "Company of Heroes" feel. You command one NATO company of 10-15 units (squads and single vehicles). Hexes about 100-150 m. Mission maps 2-3 km, real Hof Gap spots. (2026-10-25, replaces battalion scale)
+- Player side: NATO first. Enemy outnumbers you 2-3 to 1 and arrives in waves. (2026-10-25)
+- Turns: you move all units, then they move. Each unit has 2 action points (move, shoot, dash, hunker down, overwatch, enter building). (2026-10-25)
+- Systems in: cover and suppression, garrisoned buildings that take damage, overwatch (reaction fire), fog of war, hit chance shown before you commit. (2026-10-25)
+- Systems out: capture points and resource economy, mid-battle call-ins (beyond a few off-map strikes), escalation/nuclear mechanic. (2026-10-25)
+- Missions: varied goals with delay at the heart (hold the bridge, ambush, escape, rescue). 20-30 minutes, 10-15 turns each. (2026-10-25)
+- Campaign: one company across 6-8 linked missions in the first 72 hours; named squads, veterancy and losses carry over. (2026-10-25)
 - Tone: grounded tension. Quiet beauty broken by violence. (2026-10-25)
 
 ## SUPERSEDED (kept for history)
 - "Dawn at the Narrows", ancient era, one-battle diorama (2026-10-24). Dropped 2026-10-25.
+- Battalion-level operational scale (Panzer General style, 1 km hexes, battalion = 3-5 models) and design v1. Replaced 2026-10-25 by company scale.
 - Misty cold dawn as the fixed mood; low cinematic default camera; "stylized high-end miniature" land. All replaced 2026-10-25 after the look test and the Field of Command reference.
 
 ## NOT YET (undecided)
@@ -68,14 +68,14 @@ Measured (software browser): about 720,000 triangles and 82 draw calls per frame
 ## NEXT
 1. DONE: builder checked look D on his iPhone: steady 59-60 fps, "looks stunning"; wants real textures and shaders later. Performance headroom confirmed.
 2. Next: Task 0 (Sonnet, small): real Hof Gap elevation and OpenStreetMap data.
-3. Then Task 2: real terrain engine in look D (reuse the ground shader and props code from look-test.html).
+3. Then Task 2: one 2-3 km mission map (the bridge) on real terrain in look D with small hexes (reuse the ground shader and props code from look-test.html). Then units with 2 action points.
 
 ## HANDOFF (any AI can pick up from here)
-- Project: turn-based 3D hex wargame, 1985 West Germany, phone-first, web (Three.js).
+- Project: turn-based 3D hex tactics game (company level, Company of Heroes feel), 1985 West Germany, phone-first, web (Three.js).
 - Current phase: Phase 1 step 1 DONE (iPhone link confirmed 2026-10-25). Look test (Task 1) BUILT 2026-10-25 at look-test.html; look direction now decided (clear morning, Field of Command reference). Task 1b (look D) DONE 2026-10-25. Next: builder's iPhone check, then Task 0. The backup branch "backup/before-look-test" holds the state before it.
 - Builder has never used GitHub or a terminal. Describe only what to click or look at; never say commit, push, branch, repo, or terminal without a plain-language definition first.
 - Rules: plain English, define jargon, small playable steps, stop after each phase for a yes, one-line self-check with every change, original names, CC0/own assets only logged in ASSET_CREDITS.md, no mention of the builder's profession anywhere public.
-- Next 3 tasks: (1) DONE: iPhone check of look D (59-60 fps), (2) Task 0: real Hof Gap terrain data (Sonnet; ask builder before starting), (3) Task 2: terrain engine in look D. Then three unit types, select and move.
+- Next 3 tasks: (1) DONE: iPhone check of look D (59-60 fps), (2) Task 0: real Hof Gap terrain data (Sonnet; ask builder before starting), (3) Task 2: the bridge mission map in look D. Then units with 2 action points (Phase B in PLAN.md).
 - Testing tip: look-test.html has a test hook (window.__lt: snapLook, showHexAt, pause) and "?pr=2" in the address locks the resolution for screenshots.
 
 ## Housekeeping
