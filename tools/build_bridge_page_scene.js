@@ -159,15 +159,17 @@ const treeSpots = { spruce: [], broad: [] }, alleySpots = [];
     treeSpots.broad.push([x, height(x, z), z]);
   }
 }
-function chunked(geo, spots, palette, scaleRange) {
+const lodRefs = { spruce: [], broad: [] };    // every simple tree, so close ones can swap to detailed shapes
+function chunked(geo, spots, palette, scaleRange, kind) {
   const CH = 60, cells = new Map();
   for (const s of spots) { const key = Math.floor(s[0] / CH) + ',' + Math.floor(s[2] / CH); (cells.get(key) || cells.set(key, []).get(key)).push(s); }
   const out = [];
-  for (const list of cells.values()) { const im = makeTrees(geo, list, palette, scaleRange); im.frustumCulled = true; im.computeBoundingSphere(); out.push(im); }
+  for (const list of cells.values()) { const im = makeTrees(geo, list, palette, scaleRange); im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
+    if (kind) list.forEach((sp, i) => lodRefs[kind].push({ x: sp[0], z: sp[2], im, i })); }
   return out;
 }
-const spruces = chunked(spruceGeo, treeSpots.spruce, [lin(0x284422), lin(0x30502a), lin(0x213a1c), lin(0x3a5530)], [1.3, 2.2]);
-const broads = chunked(broadGeo, treeSpots.broad, [lin(0xb5651d), lin(0xc98a2b), lin(0x9c3d1c), lin(0xd4a73c), lin(0x6f7a2c), lin(0x8e5a22)], [1.0, 1.7]);
+const spruces = chunked(spruceGeo, treeSpots.spruce, [lin(0x284422), lin(0x30502a), lin(0x213a1c), lin(0x3a5530)], [1.3, 2.2], 'spruce');
+const broads = chunked(broadGeo, treeSpots.broad, [lin(0xb5651d), lin(0xc98a2b), lin(0x9c3d1c), lin(0xd4a73c), lin(0x6f7a2c), lin(0x8e5a22)], [1.0, 1.7], 'broad');
 spruces.concat(broads).forEach((m) => scene.add(m));
 window.__propCounts = { spruce: treeSpots.spruce.length, broad: treeSpots.broad.length };
 
@@ -264,8 +266,9 @@ for (const line of [roadA, roadB]) {
     }
   }
 }
-if (alleySpots.length) chunked(broadGeo, alleySpots, [lin(0x8e9a3a), lin(0xb5651d), lin(0xc98a2b), lin(0x6f7a2c)], [0.7, 0.95]).forEach((m) => scene.add(m));
+if (alleySpots.length) chunked(broadGeo, alleySpots, [lin(0x8e9a3a), lin(0xb5651d), lin(0xc98a2b), lin(0x6f7a2c)], [0.7, 0.95], 'broad').forEach((m) => scene.add(m));
 window.__propCounts.alley = alleySpots.length;
+//@@DETAIL_TREES@@
 
 const smoke = (() => {
   const chimneys = houses.filter((h, i) => i % 3 === 0).slice(0, 8).map((h) => h.chimTop.clone());

@@ -145,10 +145,10 @@ const stats = document.getElementById('stats');
 const frameMs = [], sceneInfo = { calls: 0, tris: 0 };
 let lastT = performance.now(), lastAdjust = lastT, frames = 0;
 const tags = [[document.getElementById('tag0'), bridgeLabelPos], [document.getElementById('tag1'), villageLabelPos], [document.getElementById('tag2'), farmLabelPos]];
-window.__lt = { U, flyTo, VIEWS, cam, height, riverZ, VIL, BX, BZ, BOARD, showHexAt: (x, z) => { U.uTouch.value.set(x, height(x, z), z); touchHeld = true; touchFade = 1; },
+window.__lt = { U, lodRefs, flyTo, VIEWS, cam, height, riverZ, VIL, BX, BZ, BOARD, showHexAt: (x, z) => { U.uTouch.value.set(x, height(x, z), z); touchHeld = true; touchFade = 1; },
   hideHex: () => { touchHeld = false; touchFade = 0; }, setGrid: (on) => { gridOn = on; gridBtn.classList.toggle('on', on); },
   stats: () => ({ avgMs: frameMs.reduce((a, b) => a + b, 0) / Math.max(1, frameMs.length), pr, frames,
-    trees: treeSpots.spruce.length + treeSpots.broad.length, calls: sceneInfo.calls, tris: sceneInfo.tris, terrainTris: window.__terrainTris, props: window.__propCounts, houses: houses.length, halfFloat: canHalf }),
+    trees: treeSpots.spruce.length + treeSpots.broad.length, calls: sceneInfo.calls, tris: sceneInfo.tris, terrainTris: window.__terrainTris, detailTrees: lodActive.size, detailTris: lodTris, props: window.__propCounts, houses: houses.length, halfFloat: canHalf }),
   snapLook: () => {} };
 const gridTarget = () => (gridOn ? 1 : 0);
 function frame() {
@@ -162,6 +162,7 @@ function frame() {
   U.uTouchAmt.value = touchFade;
   U.uGridAll.value += (gridTarget() - U.uGridAll.value) * Math.min(1, dt * 6);
   updateCamera(dt);
+  updateTreeLOD(now);
   sky.position.copy(camera.position);
 
   renderer.setRenderTarget(rtScene);
