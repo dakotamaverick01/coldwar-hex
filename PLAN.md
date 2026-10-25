@@ -171,3 +171,12 @@ E. Fog of war, line of sight, overwatch.
 F. Garrisons and building damage.
 G. Campaign: mission chain, carry-over, veterancy, more unit types.
 H. Polish: real textures and shaders, vehicle and soldier models, effects. Sound last.
+
+
+## Task S1 (Opus or Sonnet, ~10-15%): Blender soldier test (needs builder at his computer, Blender open and connected)
+Goal: prove the soldier pipeline before gameplay depends on it.
+1. Model one US rifleman (1985: woodland camouflage, PASGT helmet, M16) and one Soviet rifleman (khaki, steel helmet, AK-74). Low poly, about 1,000-2,000 triangles, plain colours, no big textures.
+2. One shared skeleton. Animations: idle (with small fidgets), walk, run, kneel, kneel-fire, prone, flinch (suppressed), die. Use free CC0 animations (for example Quaternius) only if they fit the skeleton, and log each in ASSET_CREDITS.md; otherwise keyframe them in Blender.
+3. Export as glTF (a standard 3D file for the web), under 1 MB each.
+4. Phone test: a page showing 150 soldiers at once on the look-test terrain, mixed animations. If normal animated models are too slow, "bake" the animations into a texture (vertex animation texture: positions stored per frame so the graphics chip plays them cheaply). Report fps on the builder's iPhone.
+5. Stop and show screenshots up close and at game camera height before going further.

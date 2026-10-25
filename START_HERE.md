@@ -38,6 +38,9 @@ Read this first every chat. It is the current state and overrides older docs (in
 - Missions: varied goals with delay at the heart (hold the bridge, ambush, escape, rescue). 20-30 minutes, 10-15 turns each. (2026-10-25)
 - Campaign: one company across 6-8 linked missions in the first 72 hours; named squads, veterancy and losses carry over. (2026-10-25)
 - Tone: grounded tension. Quiet beauty broken by violence. (2026-10-25)
+- Living screen, three layers: (1) units always show their state (turret scanning, crew in hatch, dug-in, overwatch lock, hunkered, suppressed flinching, garrison muzzles in windows); (2) every action plays out live (bounding moves, dust, tracers, casualties, camera swoops); (3) a cosmetic background war that ignores turns (horizon artillery, jets, flares, burning wrecks, dust from unseen enemies). Layer 1 is built first. (2026-10-25)
+- Enemy turn: you watch it, camera follows, overwatch shots in slow motion, fast-forward button. (2026-10-25)
+- Soldiers: built in Blender from the start as our own work, period-correct (US 1985 woodland uniform and PASGT helmet; Soviet khaki and steel helmet). Free CC0 animations may be borrowed if the skeleton matches, each logged. Needs the builder's computer on with Blender connected. Far away, cheap stand-in images. Vehicles: rigid-part models (code or Blender). (2026-10-25)
 
 ## SUPERSEDED (kept for history)
 - "Dawn at the Narrows", ancient era, one-battle diorama (2026-10-24). Dropped 2026-10-25.
