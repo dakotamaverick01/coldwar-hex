@@ -78,6 +78,14 @@ Measured (software browser): about 720,000 triangles and 82 draw calls per frame
 - STAND-INS (labelled on screen, swap later): the bridge, the roads, the village, the farm. Trees and fields are made by code from slope and height, not real land use. Vertical scale is stretched 1.4x so hills read from a tabletop camera.
 - Rebuild: tools/make_bridge_map.py makes data/bridge_heights.bin + data/bridge_map.json. mission-bridge.html is assembled by tools/assemble_bridge_page.py from look-test.html pieces plus tools/build_bridge_page_*.js (edit those, then run the script from the repo root). Do not hand-edit mission-bridge.html.
 - Tested in a software browser only (about 550k triangles at overview, 60-80 draw calls). iPhone fps not yet confirmed. Real OpenStreetMap roads, bridge and buildings can replace the stand-ins later.
+- LOOK PASS 1 (Opus, 2026-10-25), all procedural, no image files, built to carry over to every map:
+  - tools/world_look_ground.glsl: the shared ground shader. Farmland parcels (24 units) each with their own direction, cut into long strip fields of varied width/length with grass margins and wider lanes; some parcels are whole meadows. Grass streaks and dry tufts up close; dark mottled forest floor; dirt roads with ruts and a dry verge; macro colour drift. Inputs any map provides: vertex colour, aKind (x open grass, y farmland, z forest), uRoadTex (distance to roads).
+  - Terrain vertex pass: baked ambient occlusion (hollows darker, crests lighter); farmland wherever ground is open and gentle; duller olive meadow colours.
+  - Water: richer deep colour, sky sheen from above, shallow green-brown edge, foam flecks at the banks.
+  - Drifting cloud shadows on everything (uCloud, 0.22); chimney smoke from 8 houses; fruit-tree rows along stretches of road; denser forests (about 17k trees).
+  - Hex grid: thin light line with a soft dark halo, fades when zoomed far out. Fog stays clear within 90 units of the camera, hazes beyond.
+  - Measured at overview (phone size): contrast 0.39 -> 0.45, saturation 0.16 -> 0.19, mean brightness 0.63 -> 0.51 (less washed out). About 590k triangles, 86 draw calls at overview (the previous version ran 60 fps at 550k / 77).
+  - Backup branch before this pass: backup/before-map-look-pass.
 - NOT DONE here: units, action points, enemy, fog of war (Phase B onward in PLAN.md); sound; textures polish; Opus look pass is the next step.
 
 ## NEXT

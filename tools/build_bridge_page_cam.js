@@ -136,6 +136,7 @@ function resize() {
   rtA.setSize(qw, qh); rtB.setSize(qw, qh);
   downMat.uniforms.uTexel.value.set(1 / W, 1 / H);
   post.uniforms.uRes.value.set(W, H);
+  smoke.material.uniforms.uPx.value = H * 0.5 / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
 }
 addEventListener('resize', resize);
 resize();

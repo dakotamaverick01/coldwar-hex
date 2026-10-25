@@ -4,9 +4,9 @@
    ============================================================ */
 const lin = (hex) => new THREE.Color(hex);
 const COL = {
-  meadow: lin(0x657838), pasture: lin(0x536b30), plowed: lin(0x4a3a2a), stubble: lin(0x9c8650),
+  meadow: lin(0x6b7546), pasture: lin(0x5a6a3a), plowed: lin(0x4a3a2a), stubble: lin(0x9c8650),
   wheat: lin(0x6c8838), fallow: lin(0x7d6c45), forest: lin(0x2b2a1b), rock: lin(0x726c62),
-  road: lin(0x8c8271), mud: lin(0x3b3226), village: lin(0x675d47), ridge: lin(0x4b4a2c),
+  road: lin(0x8c8271), mud: lin(0x3b3226), village: lin(0x675d47), ridge: lin(0x5a5838),
 };
 function axis(inner, outerMax) {
   const a = [];
@@ -33,20 +33,12 @@ const terrain = (() => {
     const fa = forestAmount(x, z);
     c.copy(COL.meadow).lerp(COL.ridge, smooth(2, 9, h - F));
     // field patchwork on the flat valley floor
-    const fieldZone = (1 - smooth(12, 20, d)) * smooth(2.2, 3.2, d) * (1 - smooth(0.07, 0.17, slope));
+    const fieldZone = smooth(2.2, 3.2, d) * (1 - smooth(0.11, 0.2, slope)) * (1 - smooth(0.25, 0.5, fa)) * smooth(VIL.r * 0.7, VIL.r * 1.1, Math.hypot(x - VIL.x, z - VIL.z)) * (1 - smooth(120, 135, Math.max(Math.abs(x), Math.abs(z))));
     wet[k] = 0;
-    if (fieldZone > 0) {
-      const ca = Math.cos(0.35), sa = Math.sin(0.35);
-      const fu = Math.floor((x * ca - z * sa) / 6.0), fv = Math.floor((x * sa + z * ca) / 4.0);
-      const r = hash2(fu, fv);
-      const fc = r < 0.25 ? COL.plowed : r < 0.45 ? COL.stubble : r < 0.65 ? COL.wheat : r < 0.82 ? COL.pasture : COL.fallow;
-      tmp.copy(fc).multiplyScalar(0.92 + 0.16 * hash2(fu * 7 + 3, fv * 5 + 1));
-      c.lerp(tmp, fieldZone);
-      wet[k] = fc === COL.plowed ? 0.75 : 0.35;
-    }
+    if (fieldZone > 0) wet[k] = 0.3 * fieldZone;          // field colours are drawn per pixel in the ground shader
     wet[k] = Math.max(wet[k], 1 - smooth(0.8, 2.2, d));
     c.lerp(COL.mud, 1 - smooth(0.8, 1.6, d));
-    c.lerp(COL.forest, fa * 0.9);
+    c.lerp(COL.forest, fa * 0.5);
     c.lerp(COL.rock, smooth(0.35, 0.7, slope) * 0.7);
     const vd = Math.hypot(x - VIL.x, z - VIL.z);
     c.lerp(COL.village, (1 - smooth(2.5, VIL.r * 0.9, vd)) * 0.6);
@@ -54,7 +46,15 @@ const terrain = (() => {
     c.lerp(COL.forest, far * 0.7);
     kind[k * 4] = (1 - fieldZone) * (1 - fa) * smooth(1.4, 2.0, d) * (1 - smooth(0.25, 0.5, slope)) * smooth(2.5, VIL.r, vd) * (1 - far);
     kind[k * 4 + 1] = Math.max(0, fieldZone) * (1 - fa);
-    c.multiplyScalar(0.9 + 0.2 * vnoise(x * 0.9, z * 0.9));
+    kind[k * 4 + 2] = fa * (1 - far * 0.5);
+    // baked ambient occlusion and ridge light: hollows a little darker, crests a little brighter
+    if (cxm === x && czm === z && Math.abs(x) < 150 && Math.abs(z) < 170) {
+      let r1 = 0, r2 = 0;
+      for (const [ox, oz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { r1 += height(x + ox * 3, z + oz * 3); r2 += height(x + ox * 10, z + oz * 10); }
+      const cv = h - (r1 / 4) * 0.5 - (r2 / 4) * 0.5;
+      c.multiplyScalar(1 + Math.max(-0.28, Math.min(0.14, cv * 0.09)));
+    }
+    c.multiplyScalar(0.92 + 0.16 * vnoise(x * 0.9, z * 0.9));
     col[k * 3] = c.r; col[k * 3 + 1] = c.g; col[k * 3 + 2] = c.b;
   }
   const idx = new Uint32Array((NX - 1) * (NZ - 1) * 6);
@@ -117,14 +117,17 @@ const river = (() => {
         vec3 r = reflect(v, nrm);
         float fres = 0.04 + 0.7*pow(1.0 - max(dot(-v, nrm), 0.0), 5.0);
         vec3 skyC = mix(fogColAt(r), mix(uHorizon, uZenith, pow(max(r.y,0.0), 0.55)), smoothstep(0.0, 0.3, r.y));
-        vec3 deep = vec3(0.012, 0.024, 0.020);
-        vec3 c = mix(deep, skyC, fres*0.6);
+        vec3 deep = vec3(0.014, 0.034, 0.030);
+        vec3 c = mix(deep, skyC, 0.09 + fres*0.6);
         c += uSunCol * pow(max(dot(r, uSunDir), 0.0), 220.0) * 2.5;
         float streak = smoothstep(0.62, 0.9, lt_noise(vec2(vUv.x*3.0 - uTime*1.1, vUv.y*9.0)));
         c += vec3(0.05) * streak * (1.0 - abs(vUv.y*2.0-1.0));
-        vec3 mud = vec3(0.05, 0.04, 0.025) + uSunCol * 0.035;
-        c = mix(c, mud, smoothstep(0.30, 0.5, abs(vUv.y - 0.5)) * 0.8);
-        gl_FragColor = vec4(applyFog(c, vWPos), 1.0);
+        float edge = abs(vUv.y - 0.5);
+        vec3 shallow = vec3(0.055, 0.065, 0.040) + uSunCol * 0.03;
+        c = mix(c, shallow, smoothstep(0.22, 0.46, edge) * 0.75);
+        float foam = smoothstep(0.7, 0.85, lt_noise(vec2(vUv.x*6.0 - uTime*0.8, vUv.y*14.0))) * smoothstep(0.36, 0.47, edge);
+        c += vec3(0.16, 0.17, 0.16) * foam * 0.6;
+        gl_FragColor = vec4(applyFog(c * cloudShade(vWPos), vWPos), 1.0);
       }`,
   });
   const m = new THREE.Mesh(g, mat);
@@ -136,9 +139,9 @@ scene.add(river);
 /* ============================================================
    7. FORESTS: spruce cones plus autumn broadleaf, instanced in chunks so far chunks are skipped
    ============================================================ */
-const treeSpots = { spruce: [], broad: [] };
+const treeSpots = { spruce: [], broad: [] }, alleySpots = [];
 {
-  const X0 = -150, X1 = 150, Z0 = -170, Z1 = 170, step = 1.15;
+  const X0 = -150, X1 = 150, Z0 = -170, Z1 = 170, step = 0.98;
   for (let z = Z0; z < Z1; z += step) for (let x = X0; x < X1; x += step) {
     const jx = x + (rand() - 0.5) * step * 0.95, jz = z + (rand() - 0.5) * step * 0.95;
     const f = forestAmount(jx, jz);
@@ -201,7 +204,15 @@ placeHouses(farmX, farmZ, 4, 2.2);
     m4.compose(p.set(h.x, h.y + h.hgt, h.z), q, s.set(h.w * 1.22, h.w * 0.85, h.d * 1.12)); roofs.setMatrixAt(i, m4);
     roofs.setColorAt(i, roofCols[(i * 3) % 4]);
   });
-  [walls, roofs].forEach((m) => { m.castShadow = m.receiveShadow = true; scene.add(m); });
+  const chims = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), patch(new THREE.MeshLambertMaterial({ color: 0x8a5a44 })), houses.length);
+  houses.forEach((h, i) => {
+    q.setFromAxisAngle(up, h.yaw);
+    const off = new THREE.Vector3(h.w * 0.2, 0, h.d * 0.3).applyAxisAngle(up, h.yaw);
+    const base = h.y + h.hgt + h.w * 0.85 * 0.45;
+    m4.compose(p.set(h.x + off.x, base, h.z + off.z), q, s.set(0.09, 0.25 + h.w * 0.2, 0.09)); chims.setMatrixAt(i, m4);
+    h.chimTop = new THREE.Vector3(h.x + off.x, base + 0.25 + h.w * 0.2, h.z + off.z);
+  });
+  [walls, roofs, chims].forEach((m) => { m.castShadow = m.receiveShadow = true; scene.add(m); });
 
   // church: nave, tower and spire (scaled up so it reads from the overview)
   const cy = VIL.y;
@@ -240,6 +251,61 @@ const bridgeTop = Math.max(waterY(BX) + 1.0, groundN + 0.12, groundS + 0.12);
   g.traverse((o) => { o.castShadow = o.receiveShadow = true; });
   scene.add(g);
 }
+// fruit trees lining stretches of road, as on Franconian country roads
+for (const line of [roadA, roadB]) {
+  for (let k = 0; k < line.length; k += 4) {
+    const [x, z] = line[k], [x2, z2] = line[Math.min(line.length - 1, k + 1)];
+    if (vnoise(x * 0.05 + 3, z * 0.05) < 0.5) continue;
+    const dl = Math.hypot(x2 - x, z2 - z) || 1, nx = -(z2 - z) / dl, nz = (x2 - x) / dl;
+    for (const sd of [-1, 1]) {
+      const tx = x + nx * sd * 0.62, tz = z + nz * sd * 0.62;
+      if (riverDist(tx, tz) < 2 || Math.hypot(tx - VIL.x, tz - VIL.z) < VIL.r || Math.abs(tz - BZ) < 5 && Math.abs(tx - BX) < 3 || rand() < 0.15) continue;
+      alleySpots.push([tx, height(tx, tz), tz]);
+    }
+  }
+}
+if (alleySpots.length) chunked(broadGeo, alleySpots, [lin(0x8e9a3a), lin(0xb5651d), lin(0xc98a2b), lin(0x6f7a2c)], [0.7, 0.95]).forEach((m) => scene.add(m));
+window.__propCounts.alley = alleySpots.length;
+
+const smoke = (() => {
+  const chimneys = houses.filter((h, i) => i % 3 === 0).slice(0, 8).map((h) => h.chimTop.clone());
+  const PER = 34, n = chimneys.length * PER;
+  const pos = new Float32Array(n * 3), seed = new Float32Array(n);
+  chimneys.forEach((c, ci) => { for (let k = 0; k < PER; k++) { const i = ci * PER + k; pos.set([c.x, c.y, c.z], i * 3); seed[i] = k / PER + rand() * 0.02; } });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: Object.assign({ uPx: { value: 1 } }, U),
+    transparent: true, depthWrite: false,
+    vertexShader: `attribute float aSeed; uniform float uTime; uniform float uPx; uniform vec3 uSunDir;
+      varying float vA; varying vec3 vWPos; varying float vLit;
+      void main(){
+        float age = fract(uTime*0.07 + aSeed);
+        float wob = sin(aSeed*91.0 + uTime*0.8);
+        vec3 p = position + vec3(age*age*4.2 + wob*0.2*age, age*2.6, age*1.1 + cos(aSeed*53.0)*0.25*age);
+        vec4 w = modelMatrix * vec4(p, 1.0); vWPos = w.xyz;
+        vec4 mv = viewMatrix * w;
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = (0.14 + age*1.0) * uPx / max(-mv.z, 0.1);
+        vA = smoothstep(0.0, 0.1, age) * (1.0 - age) * (1.0 - age) * 0.3;
+        vLit = 0.5 + 0.5*age;
+      }`,
+    fragmentShader: `${GLSL_FOG}
+      varying float vA; varying vec3 vWPos; varying float vLit;
+      void main(){
+        vec2 q = gl_PointCoord - 0.5; float r = dot(q,q)*4.0;
+        float a = (1.0 - r) * vA; if (a <= 0.003) discard;
+        vec3 c = mix(vec3(0.12,0.12,0.13), uFogCol*0.75 + uSunCol*0.1, vLit);
+        gl_FragColor = vec4(applyFog(c, vWPos), a);
+      }`,
+  });
+  const pts = new THREE.Points(g, mat);
+  pts.frustumCulled = false; pts.renderOrder = 5;
+  return pts;
+})();
+scene.add(smoke);
+
 const bridgeLabelPos = new THREE.Vector3(BX, bridgeTop + 0.6, BZ);
 const villageLabelPos = new THREE.Vector3(VIL.x, VIL.y + 3.2, VIL.z);
 const farmLabelPos = new THREE.Vector3(farmX, height(farmX, farmZ) + 1.6, farmZ);
