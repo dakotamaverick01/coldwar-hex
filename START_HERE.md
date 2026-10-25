@@ -1,4 +1,4 @@
-# START_HERE: Cold War hex strategy game (working title TBD)
+# START_HERE: Autumn Forge (Cold War hex strategy game)
 
 Read this first every chat. It is the current state and overrides older docs (including claude/working-agreement.md where they disagree).
 
@@ -51,8 +51,9 @@ Read this first every chat. It is the current state and overrides older docs (in
 
 - LOCKED 2026-10-25: Cavalry troop equipment is a historical mix of older and newer vehicles (for example M60 and M113 alongside some M1 and Bradley). A wide range of unit types is a hallmark of the game. Exact roster is set when units are built.
 
+- LOCKED 2026-10-25: Game name is **Autumn Forge**. It covers the whole series; each battle is a subtitle (first: Hof Gap). Named after the real NATO exercise series, public history, not a clone of any game. Public pages say "not affiliated with NATO" and never mention the builder's profession. Page copy drafted in store/itch_page_autumn_forge.md. Still to check by hand: type "Autumn Forge" into itch.io search before publishing.
+
 ## NOT YET (undecided)
-- Game name (must be original).
 - Tech stack (proposal: Three.js, a free 3D library for web pages; hosted free on GitHub Pages).
 - Vehicle models: decide when we reach them. Default plan is simple stylized vehicles built in code, CC0 packs for scenery.
 - Exact unit roster and numbers (draft in PLAN.md; historical units in the Hof Gap sector still to be verified), enemy AI details, supply.
