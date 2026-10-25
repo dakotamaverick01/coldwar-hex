@@ -86,6 +86,7 @@ Measured (software browser): about 720,000 triangles and 82 draw calls per frame
   - Hex grid: thin light line with a soft dark halo, fades when zoomed far out. Fog stays clear within 90 units of the camera, hazes beyond.
   - Measured at overview (phone size): contrast 0.39 -> 0.45, saturation 0.16 -> 0.19, mean brightness 0.63 -> 0.51 (less washed out). About 590k triangles, 86 draw calls at overview (the previous version ran 60 fps at 550k / 77).
   - Backup branch before this pass: backup/before-map-look-pass.
+- DETAILED TREES (Opus, 2026-10-25): close trees swap to detailed shapes made with EZ-Tree (MIT, copied to tools/ez-tree, used at build time only: node tools/make_trees.mjs -> data/trees.bin + trees.json, 6 shapes, 2.3k-3.9k triangles each). Leaf and bark textures are drawn in code (tools/world_trees_detail.js); the library's own images are NOT used (leaf images have no stated source). Swap happens within about 14-40 units of the view centre when zoomed in, at most 150 spruce and 105 broadleaf, only trees in view. If frames get slow, the page first cuts detailed trees (readout "trees NN%"), then sharpness.
 - NOT DONE here: units, action points, enemy, fog of war (Phase B onward in PLAN.md); sound; textures polish; Opus look pass is the next step.
 
 ## NEXT
