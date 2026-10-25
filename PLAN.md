@@ -28,7 +28,7 @@ Real vehicle models, campaign, supply, air units, sound, polished UI.
 
 Method: the builder pastes one prompt per fresh Opus chat. Each task targets roughly 10% of a weekly $20/mo plan (a guess; calibrate after task 1 by reading Settings > Usage). Each has a hard stop. After each task, update START_HERE.md and stop for the builder's yes.
 
-Order: Task 0 (Sonnet, small) -> Task 1 (Opus, look test) -> builder picks a look -> Task 2 (Opus, terrain engine) -> Task 3 (Opus, battle swoop and effects). Prompts for tasks 2 and 3 are written after task 1, using what it teaches.
+Order (updated 2026-10-25): Task 1 (Opus, look test) DONE -> Task 1b (look D "Clear morning": ground and props) DONE, built by Opus; its prompt below is kept as a record -> Task 0 (Sonnet, small, real terrain data) -> Task 2 (terrain engine in look D) -> Task 3 (battle swoop and puffy smoke effects). Task 1b's prompt is at the bottom of this file.
 
 ## Task 0 (Sonnet, small): real terrain data for the Hof Gap
 Goal: try to fetch free elevation (public domain) and OpenStreetMap features for a box around Hof, Bavaria, shrink them to a small file in the repo under /data. If the workspace cannot reach the data, give the builder click-by-click steps to download one small file and attach it. Log sources in ASSET_CREDITS.md (OpenStreetMap needs credit).
@@ -55,4 +55,53 @@ CONSTRAINTS: it must run smoothly on an iPhone in Safari (aim for 30+ frames per
 HOW TO TEST: you cannot see my phone, so run the page yourself in a headless browser at phone size (390x844) and screenshot each look, close-up and the default overview. Measure frame time and report it. Do not hand me a check you can run yourself.
 
 STOP RULES: after two failed fixes on the same problem, stop and ask me. Do not exceed this scope. Stop when all three looks run and are saved; do not start the real map, units, or gameplay. Before you start, tell me in two sentences what you will build. At the end, report: what to open on my phone (the link plus /look-test.html), one line on each look's strengths and weaknesses, your recommendation and why, and your rough estimate of the usage this task consumed. Update START_HERE.md with the result and stop for my yes.
+```
+
+## Task 1b (Sonnet, ~8-10%): look D "Clear morning", ground and props
+Paste this into a fresh Sonnet chat:
+
+```
+You are my game-building partner on a hobby 3D turn-based Cold War hex strategy game (1985 West Germany, phone-first, browser, built with three.js). I am not a programmer and have never used GitHub or a terminal: describe only what to click or look at, and define any technical term in plain language the first time you use it. Be blunt and keep replies short.
+
+SETUP (do first): attach my repo dakotamaverick01/coldwar-hex with push access, clone it, and read START_HERE.md (current state, overrides older docs) and PLAN.md. Work on main. Before changing anything, make a backup branch named backup/before-look-d and push it. Never force-push. End commits with the two attribution lines your environment provides. My iPhone link is https://dakotamaverick01.github.io/coldwar-hex/ and updates on every push to main.
+
+YOUR TASK: add a fourth look, "D Clear morning", to the existing page look-test.html, and make D the look that opens first. Keep A, B and C working for comparison. Keep the same code-made stand-in valley (do not start the real map). Read look-test.html fully first: it already has the terrain, trees, river, village, smoke, valley mist, hex grid around the finger, two placeholder tanks, touch camera, a final colour pass, and automatic resolution drop.
+
+The look target (decided and LOCKED in START_HERE.md): a clear, bright autumn morning seen from a high camera, clean and realistic-leaning, like a detailed tabletop diorama. The visual reference is the indie WWII game Field of Command. It is a reference only: copy nothing from it (no assets, names, layouts or textures).
+
+Build these, in this order, and screenshot after each:
+1. LIGHT for look D: sun about 35 degrees up, warm-neutral white (not gold), crisp shadows with slightly soft edges, pale blue sky, haze only far away, valley mist sheets off (mist strength 0 in D), neutral colour grade with slight warmth, light vignette, no tilt-shift blur, no paper grain.
+2. CAMERA for look D: default view about 50 degrees looking down, narrower lens (field of view about 35 degrees) so it reads like a tabletop map. The Overview button goes to this view. Low view still swoops down low. Keep drag to turn, pinch to zoom, two fingers to slide.
+3. GROUND (applies to every look): replace the flat colours with detail made in the terrain shader (the small program that colours the land): sandy ochre dirt as the base, mown grass patches, crop-row stripes inside fields, darker wheel tracks along the road, fine small-scale variation so the land looks textured when zoomed in. No image files unless truly needed; if you use any, they must be CC0 (for example ambientCG or Poly Haven), under 1 MB in total, and logged in ASSET_CREDITS.md.
+4. PROPS, all built in code and drawn with instancing (one draw for many copies, which keeps phones fast): wooden fences along some field edges; telegraph poles with sagging wires along the road; one railway line crossing the valley with a stone arch bridge over the river; low hedgerows between some fields; several thousand small grass tufts that thin out when the camera is far away; scattered rocks; a few anti-tank obstacles (crossed steel beams) near the bridge.
+5. TREES: broadleaf trees become rounder, made of 3-4 clustered blobs; keep spruces on the ridges; a few more broadleaf trees in the valley.
+6. BUILDINGS: village houses get chimneys and roof overhangs and are slightly larger; keep the church.
+7. PLACEHOLDERS: replace the two placeholder tanks with two groups of 3 plain tank shapes (one battalion is shown as 3-5 models). Keep them clearly labelled as placeholders. No real vehicle models yet.
+Do NOT do puffy smoke, explosions, destruction, units, rules or sound in this task.
+
+CONSTRAINTS: must run smoothly on an iPhone in Safari (aim for 30+ frames per second, pixel ratio cap 2, keep the automatic resolution drop). Use only the bundled three.js in /vendor; no new libraries. Budget: under about 600,000 triangles and under 60 draw calls per frame; report both numbers (window.__lt.stats() returns them).
+
+HOW TO TEST: Playwright (a tool that drives a browser from code) and Chromium are installed in the workspace. Serve the folder locally, open look-test.html?pr=2 at 390x844 with device scale 2 and touch on, launched with the flags --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist. Use the test hooks on window.__lt: snapLook("D"), VIEWS and cam for camera placement, showHexAt(x, z), pause() before each screenshot and resume() after (frames are slow without a graphics chip, about 2-6 per second, so that number says nothing about the iPhone). Screenshot look D at the overview, a mid view of the village and bridge, the low view, and the hex grid, then compare A, B, C and D side by side. Measure brightness and colour with a small script rather than judging by eye. Check the browser console for errors. Do not hand me a check you can run yourself.
+
+STOP RULES: after two failed fixes on the same problem, stop and ask me. Do not exceed this scope. Before you start, tell me in two sentences what you will build. When done: push to main, confirm the live page loads, update START_HERE.md (LOOK TEST section and NEXT), and report: what to open on my phone (the link plus /look-test.html), the D screenshots, triangle and draw-call counts, what still looks weak, and your rough estimate of the usage this task consumed. Then stop for my yes.
+```
+
+## Task 0 (Sonnet, ~5-8%): real Hof Gap terrain data
+Paste this into a fresh Sonnet chat:
+
+```
+You are my game-building partner on a hobby 3D turn-based Cold War hex strategy game (1985 West Germany, phone-first, browser, built with three.js). I am not a programmer and have never used GitHub or a terminal: describe only what to click or look at, and define any technical term in plain language the first time you use it. Be blunt and keep replies short.
+
+SETUP (do first): attach my repo dakotamaverick01/coldwar-hex with push access, clone it, and read START_HERE.md (current state, overrides older docs) and PLAN.md. Work on main. Never force-push. End commits with the two attribution lines your environment provides.
+
+YOUR TASK: get real terrain data for the first map, the Hof Gap in northeast Bavaria, and save it in the repo as small files under /data. Do NOT change look-test.html or build any map yet.
+1. Pick the map box: the Saale valley around Hof, roughly 20 x 20 km. Check the location with a web search and tell me the box (corner latitudes and longitudes) before downloading anything big.
+2. Elevation: free, openly licensed elevation data (for example Copernicus 30 m, SRTM, or the public AWS "terrain tiles"). Shrink it to a grid of about 256 x 256 heights and save it in a compact form (a small binary or PNG height image plus a short JSON note of the box, size and height range). Target under 300 KB.
+3. Map features from OpenStreetMap: rivers and streams, main roads, railways, forest areas, villages and towns (names and outlines), simplified to keep the file small (target under 500 KB, GeoJSON or compact JSON).
+4. Log every source in ASSET_CREDITS.md with its exact licence and the credit line it requires (OpenStreetMap requires "© OpenStreetMap contributors", ODbL).
+Network note: this workspace often blocks downloads from sites other than GitHub and package registries. Try once; if a site is blocked, do not try other routes around the block. Instead give me exact click-by-click steps to download one or two small files myself and attach them in the chat.
+
+HOW TO TEST: write a tiny check page, data-check.html, that draws the height grid as a shaded image with the rivers, roads and railway on top, and screenshot it at phone size (390x844) in the workspace's headless browser (Playwright with Chromium). Compare it against a real map of the area and tell me where they disagree.
+
+STOP RULES: after two failed fixes on the same problem, stop and ask me. Do not exceed this scope. Before you start, tell me in two sentences what you will do. At the end: push to main, update START_HERE.md (NEXT and HANDOFF), and report what to open on my phone (the link plus /data-check.html), file sizes, licences, and your rough estimate of the usage this task consumed. Then stop for my yes.
 ```
