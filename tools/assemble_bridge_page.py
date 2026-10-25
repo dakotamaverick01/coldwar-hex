@@ -10,7 +10,7 @@ maketrees = sl(619, 635)
 roof = sl(643, 649)
 looks_post = sl(991, 1146)
 world = open('tools/build_bridge_page_world.js').read()
-scene = open('tools/build_bridge_page_scene.js').read()
+scene = open('tools/build_bridge_page_scene.js').read().replace('//@@DETAIL_TREES@@', open('tools/world_trees_detail.js').read())
 cam = open('tools/build_bridge_page_cam.js').read()
 
 # ---- render section edits ----
@@ -65,6 +65,8 @@ render = render.replace("gl_FragColor.rgb = mix(gl_FragColor.rgb, lc, line * m *
 render = render.replace("  uTuftFar:  { value: 26 },", "  uTuftFar:  { value: 26 },\n  uCloud:    { value: 0.22 },")
 render = render.replace("vec3 fogColAt(vec3 rd){", "uniform float uCloud;\nfloat cloudShade(vec3 wp){ vec2 p = wp.xz*0.011 + vec2(uTime*0.006, uTime*0.0025);\n  float n = lt_noise(p)*0.6 + lt_noise(p*2.3 + 5.0)*0.4;\n  return 1.0 - uCloud * smoothstep(0.5, 0.72, n); }\nvec3 fogColAt(vec3 rd){", 1)
 render = render.replace("gl_FragColor.rgb = applyFog(gl_FragColor.rgb, vWPos);", "gl_FragColor.rgb = applyFog(gl_FragColor.rgb * cloudShade(vWPos), vWPos);")
+# leaf flutter for detailed tree leaves
+render = render.replace("        ${opt.tuft ? `{\n          #ifdef USE_INSTANCING\n            vec3 ipos", "        ${opt.flutter ? `transformed += vec3(sin(uTime*5.0 + position.x*45.0 + position.y*30.0), sin(uTime*6.1 + position.z*40.0)*0.5, cos(uTime*4.3 + position.z*45.0)) * 0.004 * max(transformed.y, 0.0);` : ''}\n        ${opt.tuft ? `{\n          #ifdef USE_INSTANCING\n            vec3 ipos", 1)
 out = head + noise + '\n' + render + '\n' + world + '\n' + helpers + '\n' + maketrees + '\n' + roof + '\n' + scene + '\n' + lp + '\n' + cam
 open('mission-bridge.html', 'w').write(out)
 print('written', len(out))
