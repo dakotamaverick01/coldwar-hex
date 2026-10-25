@@ -32,10 +32,10 @@ Phase 1 plan: scope, tech, repo and iPhone link setup, usage estimate. Builder s
 
 ## HANDOFF (any AI can pick up from here)
 - Project: turn-based 3D hex wargame, 1985 West Germany, phone-first, web (Three.js).
-- Current phase: Phase 1 plan written in PLAN.md, awaiting builder's yes. Repo created and connected (dakotamaverick01/coldwar-hex); test commit pushed 2026-10-25.
+- Current phase: Phase 1 step 1. Hello page (spinning 3D hexagon) pushed 2026-10-25; waiting on builder to turn on GitHub Pages and confirm it opens on his iPhone. Plan approved 2026-10-25.
 - Builder has never used GitHub or a terminal. Describe only what to click or look at; never say commit, push, branch, repo, or terminal without a plain-language definition first.
 - Rules: plain English, define jargon, small playable steps, stop after each phase for a yes, one-line self-check with every change, original names, CC0/own assets only logged in ASSET_CREDITS.md, no mention of the builder's profession anywhere public.
-- Next 3 tasks: (1) builder says yes to PLAN.md, (2) publish hello page on GitHub Pages (builder flips one Settings switch), (3) 3D hex map.
+- Next 3 tasks: (1) builder turns on Pages and opens the link on iPhone, (2) step 2: 3D hex map with elevation (Sonnet, ask builder before starting), (3) step 5 look pass later needs Opus (ask builder first).
 
 ## Housekeeping
 - Living docs max three: START_HERE.md, ASSET_CREDITS.md (create at first asset), one plan.
