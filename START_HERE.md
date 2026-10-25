@@ -70,7 +70,7 @@ Measured (software browser): about 720,000 triangles and 82 draw calls per frame
 
 ## NEXT
 1. DONE: builder checked look D on his iPhone: steady 59-60 fps, "looks stunning"; wants real textures and shaders later. Performance headroom confirmed.
-2. Task 0 (Sonnet) PART 1 DONE 2026-10-25: real Hof Gap elevation saved in /data, check page built. PART 2 WAITING ON THE BUILDER: the OpenStreetMap server is blocked in the workspace, so the builder saves two small files from his iPhone with osm-fetch.html and attaches them in chat (steps in the last report). Then Claude shrinks them into data/hof_features.json, adds them to data-check.html, and finishes Task 0.
+2. Task 0 (Sonnet) PART 1 DONE 2026-10-25: real Hof Gap elevation saved in /data, check page built. PART 2 SHELVED 2026-10-25 by the builder until he is on a laptop (the phone download page failed on both servers; cause unknown, a laptop retry of /osm-fetch.html comes first, then overpass-turbo.eu export as a fallback). WAITING ON THE BUILDER: the OpenStreetMap server is blocked in the workspace, so the builder saves two small files from his iPhone with osm-fetch.html and attaches them in chat (steps in the last report). Then Claude shrinks them into data/hof_features.json, adds them to data-check.html, and finishes Task 0.
 3. Then Task 2: one 2-3 km mission map (the bridge) on real terrain in look D with small hexes (reuse the ground shader and props code from look-test.html). Then units with 2 action points.
 
 ## DATA (Task 0, 2026-10-25; box not yet confirmed by the builder)
