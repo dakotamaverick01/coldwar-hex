@@ -33,7 +33,7 @@ Read this first every chat. It is the current state and overrides older docs (in
 - Scale: company level, turn-based "Company of Heroes" feel. You command one NATO company of 10-15 units (squads and single vehicles). Hexes about 100-150 m. Mission maps 2-3 km, real Hof Gap spots. (2026-10-25, replaces battalion scale)
 - Player side: NATO first. Enemy outnumbers you 2-3 to 1 and arrives in waves. (2026-10-25)
 - Turns: you move all units, then they move. Each unit has 2 action points (move, shoot, dash, hunker down, overwatch, enter building). (2026-10-25)
-- Systems in: cover and suppression, garrisoned buildings that take damage, overwatch (reaction fire), fog of war, hit chance shown before you commit. (2026-10-25)
+- Systems in: cover and suppression, garrisoned buildings that take damage, ambush bonus (overwatch removed, see v3), fog of war, hit chance shown before you commit. (2026-10-25)
 - Systems out: capture points and resource economy, mid-battle call-ins (beyond a few off-map strikes), escalation/nuclear mechanic. (2026-10-25)
 - Missions: varied goals with delay at the heart (hold the bridge, ambush, escape, rescue). 20-30 minutes, 10-15 turns each. (2026-10-25)
 - Campaign: one company across 6-8 linked missions in the first 72 hours; named squads, veterancy and losses carry over. (2026-10-25)
@@ -41,6 +41,22 @@ Read this first every chat. It is the current state and overrides older docs (in
 - Living screen, three layers: (1) units always show their state (turret scanning, crew in hatch, dug-in, overwatch lock, hunkered, suppressed flinching, garrison muzzles in windows); (2) every action plays out live (bounding moves, dust, tracers, casualties, camera swoops); (3) a cosmetic background war that ignores turns (horizon artillery, jets, flares, burning wrecks, dust from unseen enemies). Layer 1 is built first. (2026-10-25)
 - Enemy turn: you watch it, camera follows, overwatch shots in slow motion, fast-forward button. (2026-10-25)
 - Soldiers: built in Blender from the start as our own work, period-correct (US 1985 woodland uniform and PASGT helmet; Soviet khaki and steel helmet). Free CC0 animations may be borrowed if the skeleton matches, each logged. Needs the builder's computer on with Blender connected. Far away, cheap stand-in images. Vehicles: rigid-part models (code or Blender). (2026-10-25)
+
+## GAME DESIGN v3 LOCKED (2026-10-25, from the Gemini decision record + builder answers; detail in PLAN.md "DESIGN v3")
+- REOPENED AND REPLACED: overwatch is deleted. Instead an AMBUSH BONUS: a unit that is hidden (hunkered/dug in/in cover) and not moved gets a first-shot accuracy bonus when an enemy walks into its sight. Same idea, no reaction-fire rules. (2026-10-25)
+- Roster, mission 1 (11 units): 1 command vehicle (M113/M577), 1 M1 + 2 M60A3, 3 M3 Bradley scout vehicles, 2 M901 ITV, 1 engineer squad in an M113. Off-map mortars: 4 fire missions (HE or smoke, 1-turn delay). Bradleys drop 2-3 man scout teams (scout team size to verify). (2026-10-25)
+- Board size: BIGGER EVERYWHERE, about 32 x 40 hexes (4 x 5 km) instead of 20 x 27. Tanks must feel fast. (2026-10-25)
+- Movement (hexes per action point): fast vehicles (M1, Bradley, BMP, T-80) 3 off road / 5 on road; slower vehicles (M60, ITV, M113, BRDM-2) 2 off road / 4 on road; infantry 1; woods and villages cost 1 hex per point for everyone; dash doubles. Numbers are a starting table, tuned by play. (2026-10-25)
+- Turn = about 3 minutes of battle; 12 turns = about 35 minutes; clock ticks 3 min per turn; mortar delay 1 turn. (2026-10-25)
+- Building hit points: house 4, barn/stable 5, church 8; at 0 they become rubble (light cover), occupants take no collapse damage. Names: "half-timbered house", not "stone farmhouse". (2026-10-25)
+- Campaign: a straight line of about 6 missions first; supply points are earned in a mission and spent ONLY between missions; branching routes later. (2026-10-25)
+- Enemy tank types: Claude verifies the history, then proposes waves for the builder's OK (see HISTORY CHECK). (2026-10-25)
+- Adopted from the Gemini record (proposals, tunable): 2 AP per unit; flat armour reduction; 3 HP vehicles, 6-man squads; soft vs anti-armour firepower; sight 8 hexes (scouts 12) scaled to the bigger map later; gun/TOW range 16, autocannon/MG 8, small arms 3; cover +0/+1/+2; hit chance shown as a percent; suppression pinned at 50%, broken at 100%; vehicle statuses (immobilised, turret jammed); command aura 5 hexes +10% accuracy; leader-loss penalties; engineers wire a bridge (1 AP a turn, 4 turns) then blow it; smoke 3x3 for 2 turns; hull-down +1; slow-turtle enemy recon; red smoke one turn before enemy artillery; 3-tier grade Decisive/Tactical/Marginal. (2026-10-25)
+
+## HISTORY CHECK (2026-10-25, status: PARTLY VERIFIED)
+- Confirmed (Wikipedia): 2nd Cavalry Regiment was in West Germany 1958-1991 with bases at Nuremberg, Feucht, Bindlach, Amberg, Bamberg; border mission ended 1 March 1990. M3 Bradley carries a crew of 3 plus a 2-man scout team; first Bradleys fielded March 1983 (to the 2nd Armored Division). GSFG 1987: 1st Guards Tank Army at Dresden (4 tank, 1 motor-rifle division), 8th Guards Army at Weimar-Nohra (1 tank, 3 motor-rifle divisions); majority of GSFG tanks T-72 (about 1987).
+- NOT confirmed (web sources thin): exact 2nd ACR M1/M3 fielding dates (my memory: M1 and M3 reached 2nd ACR in the second half of the 1980s, so a late-1985 mix with M60A3 and M113 is plausible but unproven); which Soviet army would hit Hof (1st Guards Tank Army from Dresden is the best guess); whether T-64/T-80 or T-72 would lead there; TOW minimum range (real TOW needs roughly 65 m; game: no shot inside 1 hex); callsign conventions.
+- Game rule until proven wrong: label enemy tank types as "T-64A / T-72A / T-80" mix, keep the player mix as stated, and mark every claim in any public page as "approximate".
 
 ## SUPERSEDED (kept for history)
 - "Dawn at the Narrows", ancient era, one-battle diorama (2026-10-24). Dropped 2026-10-25.
