@@ -1,6 +1,7 @@
 # Handoff tasks (made 2026-10-25 by Claude Opus)
 
 Small, self-contained jobs that a cheaper AI can do while the builder's main usage resets.
+DESIGN_SESSION_PROMPT.md: paste into Grok or Gemini to work through design questions (units, orders of battle, stats, combat, command, enemy, campaign, interface). It ends each topic with a DECISION RECORD to bring back to Claude.
 Each task file has everything the AI needs. Do them in order: H1, H2, H3. The art prompts (ART_PROMPTS.md) can be done any time, in Grok or Gemini.
 
 ## How to run a Haiku task (from the iPhone)
