@@ -12,7 +12,9 @@
   .card { background: #1d2227; border: 1px solid #333b44; border-radius: 12px; padding: 12px; margin: 14px 0; }
   button, a.save { display: block; width: 100%; box-sizing: border-box; text-align: center; background: #3d6a4f; color: #fff; border: 0; border-radius: 10px; padding: 14px; font-size: 17px; margin-top: 10px; text-decoration: none; }
   button:disabled { background: #444; }
+  button.alt { background: #555; }
   a.save { background: #2f6fb5; }
+  input { width: 100%; box-sizing: border-box; padding: 10px; font-size: 16px; background: #2a3037; color: #e6e6e6; border: 1px solid #3c444d; border-radius: 8px; margin-top: 6px; }
   .msg { font-size: 14px; color: #b7c0c8; margin-top: 8px; white-space: pre-wrap; }
   .ok { color: #8fe3a5; } .bad { color: #ff9b8f; }
   small { color: #8b949c; }
@@ -20,19 +22,28 @@
 </head>
 <body>
 <h1>Hof Gap map download</h1>
-<p>This page asks the free OpenStreetMap server for the rivers, roads, railway, forests and buildings in the game's 15 x 15 km box, and lets you save the result as a file on your iPhone. Then you attach the file in the Claude chat.</p>
+<p>This page asks the free OpenStreetMap servers for the rivers, roads, railway and forests of the game's 15 x 15 km box. It asks in 9 small pieces, retries by itself, and lets you save the result as one file on your iPhone. Then you attach the file in the Claude chat.</p>
+
+<div class="card">
+  <b>Step 0 (30 seconds): test the servers</b>
+  <div class="msg">Sends a tiny question to each server so we can see which one answers from your phone. If you screenshot the result for Claude, that tells us exactly what is blocked.</div>
+  <button id="test">Test the servers</button>
+  <div class="msg" id="mt"></div>
+</div>
 
 <div class="card">
   <b>File 1: rivers, roads, railway, forests, water</b>
-  <div class="msg">Usually 3 to 8 MB. Takes up to a minute.</div>
+  <div class="msg">9 pieces, about 3 to 8 MB in total, a few minutes. Keep this page open and the screen on. If some pieces fail, tap the button again: it only asks for the missing ones.</div>
   <button id="go1">1. Download file 1</button>
   <div class="msg" id="m1"></div>
   <div id="s1"></div>
 </div>
 
 <div class="card">
-  <b>File 2: building outlines</b>
-  <div class="msg">Usually 5 to 15 MB. Takes up to two minutes. Keep this page open and the screen on.</div>
+  <b>File 2 (later): building outlines for one mission area</b>
+  <div class="msg">Not needed yet. After we pick the bridge location, Claude will give you the two numbers to type in here. It asks for a square about 3 km wide, which is small and quick.</div>
+  <input id="lat" inputmode="decimal" placeholder="Latitude, for example 50.3170">
+  <input id="lon" inputmode="decimal" placeholder="Longitude, for example 11.9170">
   <button id="go2">1. Download file 2</button>
   <div class="msg" id="m2"></div>
   <div id="s2"></div>
@@ -40,73 +51,145 @@
 
 <div class="card">
   <b>Then, in the Claude chat</b>
-  <div class="msg">Tap the + button, tap Files, open Downloads, and pick both files (hof_osm_map.json and hof_osm_buildings.json). Send them with the message "attached".</div>
+  <div class="msg">Tap the + button, tap Files, open Downloads, and pick the file (hof_osm_map.json, later hof_osm_buildings.json). Send it with the message "attached".</div>
 </div>
 
-<div class="card">
-  <b>Server</b>
-  <select id="srv" style="width:100%;padding:10px;font-size:16px;background:#2a3037;color:#e6e6e6;border:1px solid #3c444d;border-radius:8px;margin-top:6px">
-    <option value="https://overpass-api.de/api/interpreter">overpass-api.de (default)</option>
-    <option value="https://overpass.kumi.systems/api/interpreter">overpass.kumi.systems (use if the first one fails)</option>
-  </select>
-</div>
 <p><small>Map data &copy; OpenStreetMap contributors, ODbL licence (openstreetmap.org/copyright).</small></p>
 
 <script>
 "use strict";
-const BB = "50.264,11.788,50.401,12.002"; // south, west, north, east (a hair wider than the game box)
-const Q1 = `[out:json][timeout:180];
+const SERVERS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+];
+const BOX = { s: 50.264, w: 11.788, n: 50.401, e: 12.002 };   // a hair wider than the game box
+const NT = 3;                                                  // 3 x 3 tiles
+const $ = (id) => document.getElementById(id);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const host = (u) => u.split("/")[2];
+
+// One question to one server. Returns parsed JSON or throws an error with a plain-English reason.
+async function ask(server, query, timeoutMs) {
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), timeoutMs);
+  let res, text;
+  try {
+    res = await fetch(server, { method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(query) });
+    text = await res.text();
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error("no answer in " + Math.round(timeoutMs / 1000) + " s (server busy)");
+    throw new Error("could not connect (" + e.message + "). Usually a blocker, VPN, private relay, or the server is down");
+  } finally { clearTimeout(timer); }
+  if (res.status === 429) throw new Error("server says too many requests (429)");
+  if (res.status === 504 || res.status === 503) throw new Error("server overloaded (" + res.status + ")");
+  if (!res.ok) throw new Error("server error " + res.status + ": " + text.replace(/<[^>]+>/g, " ").trim().slice(0, 120));
+  let json; try { json = JSON.parse(text); } catch (e) { throw new Error("reply was not a map file: " + text.replace(/<[^>]+>/g, " ").trim().slice(0, 120)); }
+  if (json.remark && /error|timeout|out of memory|runtime/i.test(json.remark)) throw new Error("server gave up: " + json.remark.slice(0, 100));
+  return json;
+}
+
+// Try a question on every server in turn, a few rounds, with pauses.
+async function askAnywhere(query, timeoutMs, log) {
+  let lastErr = "";
+  for (let round = 0; round < 3; round++) {
+    for (const s of SERVERS) {
+      try { return await ask(s, query, timeoutMs); }
+      catch (e) { lastErr = host(s) + ": " + e.message; log && log(lastErr); }
+    }
+    await sleep(6000 * (round + 1));
+  }
+  throw new Error(lastErr);
+}
+
+function offerFile(slot, text, filename, msgEl, note) {
+  const blob = new Blob([text], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const mb = (blob.size / 1048576).toFixed(1);
+  msgEl.className = "msg ok";
+  msgEl.textContent = note + " " + mb + " MB. Now tap the blue button to save it.";
+  slot.innerHTML = "";
+  const a = document.createElement("a"); a.className = "save"; a.href = url; a.download = filename; a.textContent = "2. Save " + filename; slot.appendChild(a);
+  const file = new File([blob], filename, { type: "application/json" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    const b = document.createElement("button"); b.className = "alt"; b.textContent = "Or: share / Save to Files";
+    b.onclick = () => navigator.share({ files: [file] }).catch(() => {}); slot.appendChild(b);
+  }
+}
+
+// ---- Step 0: server test ----
+$("test").onclick = async () => {
+  const btn = $("test"), out = $("mt"); btn.disabled = true; out.className = "msg"; out.textContent = "";
+  const tiny = "[out:json][timeout:10];node(50.3170,11.9170,50.3172,11.9172);out;";
+  for (const s of SERVERS) {
+    const t0 = Date.now();
+    try { await ask(s, tiny, 15000); out.textContent += "OK   " + host(s) + "  (" + (Date.now() - t0) + " ms)\n"; }
+    catch (e) { out.textContent += "FAIL " + host(s) + ": " + e.message + "\n"; }
+  }
+  btn.disabled = false;
+};
+
+// ---- File 1: nine tiles, merged ----
+const got = new Map();     // tile index -> elements
+$("go1").onclick = async () => {
+  const btn = $("go1"), msg = $("m1"), slot = $("s1");
+  btn.disabled = true; slot.innerHTML = ""; msg.className = "msg";
+  const dLat = (BOX.n - BOX.s) / NT, dLon = (BOX.e - BOX.w) / NT;
+  let lines = [];
+  const show = () => { msg.textContent = lines.slice(-14).join("\n"); };
+  for (let i = 0; i < NT * NT; i++) {
+    if (got.has(i)) continue;
+    const r = Math.floor(i / NT), c = i % NT;
+    const bb = [BOX.s + r * dLat, BOX.w + c * dLon, BOX.s + (r + 1) * dLat, BOX.w + (c + 1) * dLon].map((v) => v.toFixed(5)).join(",");
+    const q = `[out:json][timeout:90];
 (
- way["waterway"~"^(river|stream|canal)$"](${BB});
- way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|living_street|track|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$"](${BB});
- way["railway"~"^(rail|light_rail|narrow_gauge)$"](${BB});
- way["barrier"~"^(hedge|wall|retaining_wall)$"](${BB});
- way["natural"="tree_row"](${BB});
- way["natural"="wood"](${BB});
- way["landuse"="forest"](${BB});
- relation["natural"="wood"](${BB});
- relation["landuse"="forest"](${BB});
- way["natural"="water"](${BB});
- relation["natural"="water"](${BB});
- way["landuse"~"^(residential|industrial|commercial|retail|military)$"](${BB});
+ way["waterway"~"^(river|stream|canal)$"](${bb});
+ way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|living_street|track|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$"](${bb});
+ way["railway"~"^(rail|light_rail|narrow_gauge)$"](${bb});
+ way["barrier"~"^(hedge|wall|retaining_wall)$"](${bb});
+ way["natural"~"^(tree_row|wood|water)$"](${bb});
+ way["landuse"~"^(forest|residential|industrial|commercial|retail|military)$"](${bb});
+ relation["natural"~"^(wood|water)$"](${bb});
+ relation["landuse"="forest"](${bb});
 );
 out geom;`;
-const Q2 = `[out:json][timeout:180];
-way["building"](${BB});
-out geom;`;
-
-function setup(n, query, filename) {
-  const btn = document.getElementById("go" + n), msg = document.getElementById("m" + n), slot = document.getElementById("s" + n);
-  btn.onclick = async () => {
-    btn.disabled = true; slot.innerHTML = ""; msg.className = "msg"; msg.textContent = "Asking the server... (this can take a while)";
-    const t0 = Date.now();
+    lines.push("Piece " + (i + 1) + " of 9 ..."); show();
     try {
-      const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 300000);
-      const res = await fetch(document.getElementById("srv").value, { method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(query) });
-      const text = await res.text(); clearTimeout(timer);
-      if (!res.ok) throw new Error("Server said " + res.status + ". " + text.slice(0, 150));
-      let json; try { json = JSON.parse(text); } catch (e) { throw new Error("Reply was not a map file: " + text.slice(0, 150)); }
-      if (json.remark && /error|timeout|out of memory/i.test(json.remark)) throw new Error("Server problem: " + json.remark);
-      const n_el = (json.elements || []).length;
-      if (n_el === 0) throw new Error("The server returned no map items.");
-      const blob = new Blob([text], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const mb = (blob.size / 1048576).toFixed(1);
-      msg.className = "msg ok"; msg.textContent = `Got ${n_el} map items, ${mb} MB, in ${Math.round((Date.now() - t0) / 1000)} s. Now tap the blue button to save it.`;
-      const a = document.createElement("a"); a.className = "save"; a.href = url; a.download = filename; a.textContent = "2. Save " + filename; slot.appendChild(a);
-      const file = new File([blob], filename, { type: "application/json" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        const b = document.createElement("button"); b.style.background = "#555"; b.textContent = "Or: share / Save to Files";
-        b.onclick = () => navigator.share({ files: [file] }).catch(() => {}); slot.appendChild(b);
-      }
+      const json = await askAnywhere(q, 100000, (m) => { lines.push("   retry: " + m); show(); });
+      got.set(i, json.elements || []);
+      lines[lines.length - 1] = "Piece " + (i + 1) + " of 9: OK, " + (json.elements || []).length + " items"; show();
     } catch (e) {
-      msg.className = "msg bad"; msg.textContent = "Did not work: " + e.message + "\nTry again, or switch the server at the bottom of the page.";
+      lines.push("Piece " + (i + 1) + " of 9: FAILED. " + e.message); show();
     }
-    btn.disabled = false;
-  };
-}
-setup(1, Q1, "hof_osm_map.json");
-setup(2, Q2, "hof_osm_buildings.json");
+  }
+  const missing = NT * NT - got.size;
+  if (missing > 0) {
+    msg.className = "msg bad";
+    msg.textContent = lines.slice(-14).join("\n") + "\n\n" + missing + " piece(s) did not arrive. Tap the green button again to retry just those. If it keeps failing, screenshot this and the Step 0 test and send them to Claude.";
+  } else {
+    const merged = new Map();
+    for (const els of got.values()) for (const el of els) merged.set(el.type + "/" + el.id, el);
+    const text = JSON.stringify({ version: 0.6, generator: "osm-fetch tiles", osm3s: { copyright: "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL." }, elements: [...merged.values()] });
+    offerFile(slot, text, "hof_osm_map.json", msg, "All 9 pieces arrived: " + merged.size + " map items.");
+  }
+  btn.disabled = false;
+};
+
+// ---- File 2: buildings in a 3 km square ----
+$("go2").onclick = async () => {
+  const btn = $("go2"), msg = $("m2"), slot = $("s2");
+  const lat = parseFloat($("lat").value.replace(",", ".")), lon = parseFloat($("lon").value.replace(",", "."));
+  if (!(lat > 50.2 && lat < 50.5 && lon > 11.7 && lon < 12.1)) { msg.className = "msg bad"; msg.textContent = "Type the two numbers Claude gave you (latitude about 50.3, longitude about 11.9)."; return; }
+  btn.disabled = true; slot.innerHTML = ""; msg.className = "msg"; msg.textContent = "Asking...";
+  const dLat = 1500 / 111320, dLon = 1500 / (111320 * Math.cos(lat * Math.PI / 180));
+  const bb = [lat - dLat, lon - dLon, lat + dLat, lon + dLon].map((v) => v.toFixed(5)).join(",");
+  try {
+    const json = await askAnywhere(`[out:json][timeout:90];\nway["building"](${bb});\nout geom;`, 100000, (m) => { msg.textContent = "retry: " + m; });
+    if (!(json.elements || []).length) throw new Error("the servers returned no buildings for that spot. Check the two numbers.");
+    offerFile(slot, JSON.stringify(json), "hof_osm_buildings.json", msg, "Got " + json.elements.length + " buildings.");
+  } catch (e) { msg.className = "msg bad"; msg.textContent = "Did not work: " + e.message; }
+  btn.disabled = false;
+};
 </script>
 </body>
 </html>
