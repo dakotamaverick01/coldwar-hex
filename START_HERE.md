@@ -72,6 +72,14 @@ Measured (software browser): about 720,000 triangles and 82 draw calls per frame
 - Tested only in a software (no graphics chip) browser at iPhone size; real iPhone smoothness still unconfirmed. Builder checks the fps readout on his phone.
 - No new outside assets (all shapes, textures and effects are made by code).
 
+## BRIDGE MAP (Task 2, built 2026-10-25 by Sonnet)
+- Page: /mission-bridge.html. Real Hof elevation (a rotated 3 x 3.5 km crop of data/hof_heights.bin around a Saale reach near Hof), river line traced from the elevation by code, in look D. Board = 20 x 28 hexes (hex = 10 units = 125 m; 1 unit = 12.5 m). Grid button toggles the hexes; touch the land to light them.
+- World frame: +x runs upstream along the river, +z is your bank (WSW), -z is the enemy side. No mirror. River crosses the middle; the bridge is at x = 0.
+- STAND-INS (labelled on screen, swap later): the bridge, the roads, the village, the farm. Trees and fields are made by code from slope and height, not real land use. Vertical scale is stretched 1.4x so hills read from a tabletop camera.
+- Rebuild: tools/make_bridge_map.py makes data/bridge_heights.bin + data/bridge_map.json. mission-bridge.html is assembled by tools/assemble_bridge_page.py from look-test.html pieces plus tools/build_bridge_page_*.js (edit those, then run the script from the repo root). Do not hand-edit mission-bridge.html.
+- Tested in a software browser only (about 550k triangles at overview, 60-80 draw calls). iPhone fps not yet confirmed. Real OpenStreetMap roads, bridge and buildings can replace the stand-ins later.
+- NOT DONE here: units, action points, enemy, fog of war (Phase B onward in PLAN.md); sound; textures polish; Opus look pass is the next step.
+
 ## NEXT
 1. DONE: builder checked look D on his iPhone: steady 59-60 fps, "looks stunning"; wants real textures and shaders later. Performance headroom confirmed.
 2. Task 0 (Sonnet) PART 1 DONE 2026-10-25: real Hof Gap elevation saved in /data, check page built. PART 2: the first phone download page failed on both servers (cause unknown; probably the single huge 15 x 15 km request with all buildings). REBUILT 2026-10-25 (Sonnet): /osm-fetch.html now has a Step 0 server test, downloads file 1 in 9 small tiles with automatic retries across 4 servers, plain-English errors, and builds the buildings file only for a 3 km square around the chosen bridge. Tested against a pretend server only; not yet tried by the builder on the real servers. Laptop fallback if it still fails: overpass-turbo.eu export. WAITING ON THE BUILDER: the OpenStreetMap server is blocked in the workspace, so the builder saves two small files from his iPhone with osm-fetch.html and attaches them in chat (steps in the last report). Then Claude shrinks them (file 1 first; buildings only after the bridge location is picked) into data/hof_features.json, adds them to data-check.html, and finishes Task 0.

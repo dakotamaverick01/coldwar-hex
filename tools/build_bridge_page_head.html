@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Bridge Mission Map</title>
+<style>
+  :root { --ink:#eef1ea; --ink-dim:rgba(238,241,234,.72); --panel:rgba(16,20,22,.58); --panel-edge:rgba(255,255,255,.14); --accent:#e9c27a; --accent-ink:#1d1a12; }
+  html, body { margin:0; height:100%; background:#14181c; overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; }
+  body { font:15px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color:var(--ink); }
+  #top { position:fixed; left:0; right:0; top:0; padding:calc(env(safe-area-inset-top,0px) + 10px) 16px 0; pointer-events:none; }
+  #title { font-weight:700; font-size:15px; text-align:center; text-shadow:0 1px 3px rgba(0,0,0,.7); }
+  #note { margin-top:4px; font-size:12px; color:var(--ink-dim); text-align:center; text-shadow:0 1px 3px rgba(0,0,0,.7); }
+  #bottom { position:fixed; left:0; right:0; bottom:0; padding:0 16px calc(env(safe-area-inset-bottom,0px) + 12px); display:flex; align-items:flex-end; justify-content:space-between; gap:8px; pointer-events:none; }
+  .views { display:flex; gap:8px; pointer-events:auto; }
+  .views button { min-height:48px; padding:0 16px; border-radius:24px; border:1px solid var(--panel-edge); background:var(--panel); color:var(--ink); font:600 14px/1 inherit; font-family:inherit; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); cursor:pointer; }
+  .views button.on { background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+  #stats { position:fixed; right:16px; top:calc(env(safe-area-inset-top,0px) + 56px); font:11px/1.3 ui-monospace, Menlo, monospace; color:var(--ink-dim); text-align:right; text-shadow:0 1px 2px rgba(0,0,0,.8); white-space:nowrap; }
+  #hint { position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom,0px) + 74px); transform:translateX(-50%); background:var(--panel); border:1px solid var(--panel-edge); border-radius:12px; padding:8px 12px; font-size:12.5px; color:var(--ink); text-align:center; width:max-content; max-width:calc(100vw - 32px); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); pointer-events:none; transition:opacity 1s; }
+  .tag { position:fixed; left:0; top:0; pointer-events:none; font:700 10px/1 -apple-system, system-ui, sans-serif; letter-spacing:.06em; text-transform:uppercase; color:#1d1a12; background:#f0d9a0; border-radius:6px; padding:4px 6px; white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,.4); display:none; }
+  #err { position:fixed; inset:auto 16px 50% 16px; background:#5a1d1d; color:#fff; padding:12px; border-radius:10px; font-size:13px; display:none; }
+</style>
+</head>
+<body>
+<div id="top">
+  <div id="title">Bridge mission map (test)</div>
+  <div id="note">Real Hof elevation and a river line traced from it. Bridge, roads, village and farm are stand-ins.</div>
+</div>
+<div id="hint">Drag to turn · pinch to zoom · two fingers to slide<br>Touch the land to light up the hexes</div>
+<div id="bottom">
+  <div class="views">
+    <button id="vOver">Overview</button>
+    <button id="vLow">Bridge view</button>
+    <button id="vGrid" class="on">Grid</button>
+  </div>
+  <div id="stats"></div>
+</div>
+<div class="tag" id="tag0">Stand-in bridge</div>
+<div class="tag" id="tag1">Stand-in village</div>
+<div class="tag" id="tag2">Stand-in farm</div>
+<div id="err"></div>
+
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.js" } }</script>
+<script type="module">
+import * as THREE from 'three';
+
+window.addEventListener('error', (e) => {
+  const el = document.getElementById('err');
+  el.style.display = 'block';
+  el.textContent = 'Error: ' + (e.message || e);
+});
+
+const params = new URLSearchParams(location.search);
+const FIXED_PR = params.has('pr') ? parseFloat(params.get('pr')) : null;   // for testing: lock the resolution
+
