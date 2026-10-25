@@ -979,7 +979,7 @@ function chunked(geo, spots, palette, scaleRange, kind) {
   const out = [];
   for (const list of cells.values()) { const im = makeTrees(geo.clone(), list, palette, scaleRange);
     im.geometry.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(list.length).fill(1), 1));
-    addFade(im.material, true);   // shadow pass stays solid: the simple tree always casts the shadow im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
+    addFade(im.material, true); /* shadow pass stays solid: the simple tree always casts the shadow */ im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
     if (kind) list.forEach((sp, i) => lodRefs[kind].push({ x: sp[0], z: sp[2], im, i, f: 0 })); }
   return out;
 }
