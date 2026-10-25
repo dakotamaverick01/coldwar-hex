@@ -21,3 +21,17 @@ Stop after each step for the builder's yes.
 
 ## Out of scope for Phase 1
 Real vehicle models, campaign, supply, air units, sound, polished UI.
+
+---
+
+# OPUS WORK ORDERS (written 2026-10-25)
+
+Method: the builder pastes one prompt per fresh Opus chat. Each task targets roughly 10% of a weekly $20/mo plan (a guess; calibrate after task 1 by reading Settings > Usage). Each has a hard stop. After each task, update START_HERE.md and stop for the builder's yes.
+
+Order: Task 0 (Sonnet, small) -> Task 1 (Opus, look test) -> builder picks a look -> Task 2 (Opus, terrain engine) -> Task 3 (Opus, battle swoop and effects). Prompts for tasks 2 and 3 are written after task 1, using what it teaches.
+
+## Task 0 (Sonnet, small): real terrain data for the Hof Gap
+Goal: try to fetch free elevation (public domain) and OpenStreetMap features for a box around Hof, Bavaria, shrink them to a small file in the repo under /data. If the workspace cannot reach the data, give the builder click-by-click steps to download one small file and attach it. Log sources in ASSET_CREDITS.md (OpenStreetMap needs credit).
+
+## Task 1 (Opus, ~10%): look test, three versions on one page
+Full prompt is given to the builder in chat; it is reproduced in docs below if needed.
