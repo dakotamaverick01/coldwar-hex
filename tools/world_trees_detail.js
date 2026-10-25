@@ -20,12 +20,12 @@ const leafTex = (() => {      // left half: spruce sprigs, right half: broad-lea
     const steps = 22;
     for (let s = 0; s < steps; s++) {
       const nx = x + Math.cos(a) * len / steps, ny = y + Math.sin(a) * len / steps;
-      const v = 150 + r() * 70; g.strokeStyle = `rgb(${v * 0.82},${v},${v * 0.7})`; g.lineWidth = 3.2 - s * 0.1;
+      const v = 110 + r() * 60; g.strokeStyle = `rgb(${v * 0.82},${v},${v * 0.7})`; g.lineWidth = 3.2 - s * 0.1;
       g.beginPath(); g.moveTo(x, y); g.lineTo(nx, ny); g.stroke();
       const nl = 26 * (1 - s / steps * 0.6);
       for (const sideA of [-1, 1]) for (let m = 0; m < 3; m++) {
         const na = a + sideA * (0.8 + r() * 0.4), px = x + (nx - x) * m / 3, py = y + (ny - y) * m / 3;
-        const vv = 170 + r() * 85; g.strokeStyle = `rgb(${vv * 0.85},${vv},${vv * 0.72})`; g.lineWidth = 1.6 + r();
+        const vv = 130 + r() * 80; g.strokeStyle = `rgb(${vv * 0.85},${vv},${vv * 0.72})`; g.lineWidth = 1.6 + r();
         g.beginPath(); g.moveTo(px, py); g.lineTo(px + Math.cos(na) * nl * (0.7 + r() * 0.5), py + Math.sin(na) * nl * (0.7 + r() * 0.5)); g.stroke();
       }
       x = nx; y = ny; a += (r() - 0.5) * 0.12;
@@ -67,7 +67,7 @@ function leafMaterial() {
   return m;
 }
 const detailSets = { spruce: [], broad: [] };
-const DETAIL_CAP = { spruce: 120, broad: 80 };   // per shape variant
+const DETAIL_CAP = { spruce: 50, broad: 35 };   // per shape variant
 {
   const barkMatS = patch(new THREE.MeshLambertMaterial({ map: barkTex, vertexColors: true, color: 0x8a6e58 }), { wind: true });
   const barkMatB = patch(new THREE.MeshLambertMaterial({ map: barkTex, vertexColors: true, color: 0x8f8678 }), { wind: true });
@@ -107,6 +107,8 @@ for (const kind of ['spruce', 'broad']) for (const ref of lodRefs[kind]) {
   (lodBuckets.get(key) || lodBuckets.set(key, []).get(key)).push(ref);
 }
 const ZERO_M = new THREE.Matrix4().makeScale(0, 0, 0);
+const lodFrustum = new THREE.Frustum(), lodPM = new THREE.Matrix4(), lodSphere = new THREE.Sphere(new THREE.Vector3(), 2.2);
+let lodScale = 1;   // drops automatically if the phone struggles (see the frame loop)
 let lodActive = new Set(), lodLast = { t: -1, x: 1e9, z: 1e9, d: 0 }, lodTris = 0;
 function updateTreeLOD(now) {
   const camX = camera.position.x, camZ = camera.position.z;
@@ -117,10 +119,11 @@ function updateTreeLOD(now) {
   const R = on ? Math.min(40, 14 + cam.dist * 0.7) : 0;
   const pick = { spruce: [], broad: [] };
   if (on) {
+    camera.updateMatrixWorld(); lodPM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); lodFrustum.setFromProjectionMatrix(lodPM);
     const c0 = Math.floor((cx - R) / LOD_CELL), c1 = Math.floor((cx + R) / LOD_CELL), r0 = Math.floor((cz - R) / LOD_CELL), r1 = Math.floor((cz + R) / LOD_CELL);
     for (let a = c0; a <= c1; a++) for (let b = r0; b <= r1; b++) {
       const list = lodBuckets.get(a + ',' + b); if (!list) continue;
-      for (const ref of list) { const d = Math.hypot(ref.x - cx, ref.z - cz); if (d < R) pick[ref.kind].push([d, ref]); }
+      for (const ref of list) { const d = Math.hypot(ref.x - cx, ref.z - cz); if (d >= R) continue; lodSphere.center.set(ref.x, height(ref.x, ref.z) + 0.8, ref.z); if (lodFrustum.intersectsSphere(lodSphere)) pick[ref.kind].push([d, ref]); }
     }
   }
   const next = new Set();
@@ -131,10 +134,10 @@ function updateTreeLOD(now) {
     pick[kind].sort((p, q) => p[0] - q[0]);
     for (const [, ref] of pick[kind]) {
       const set = detailSets[kind][ref.v], k = counts[kind][ref.v];
-      if (k >= set.cap) continue;
+      if (k >= Math.round(set.cap * lodScale)) continue;
       if (!ref.saved) { ref.saved = new THREE.Matrix4(); ref.im.getMatrixAt(ref.i, ref.saved); }
       set.bark.setMatrixAt(k, ref.saved); set.leaves.setMatrixAt(k, ref.saved);
-      ref.im.getColorAt(ref.i, col); set.leaves.setColorAt(k, col.multiplyScalar(1.25));
+      ref.im.getColorAt(ref.i, col); set.leaves.setColorAt(k, col.multiplyScalar(kind === 'spruce' ? 1.15 : 1.3));
       counts[kind][ref.v] = k + 1;
       next.add(ref);
       if (!lodActive.has(ref)) { ref.im.setMatrixAt(ref.i, ZERO_M); touched.add(ref.im); }

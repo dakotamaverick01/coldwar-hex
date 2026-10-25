@@ -184,12 +184,15 @@ function frame() {
 
   if (!FIXED_PR && now - lastAdjust > 2500 && frameMs.length >= 60) {
     const avg = frameMs.reduce((a, b) => a + b, 0) / frameMs.length;
-    if (avg > 38 && pr > 1) { pr = Math.max(1, pr - 0.25); resize(); lastAdjust = now; }
+    // first fewer detailed trees, then lower sharpness
+    if (avg > 21 && lodScale > 0.35) { lodScale = Math.max(0.35, lodScale * 0.8); lodLast.t = -1; lastAdjust = now; }
+    else if (avg > 38 && pr > 1) { pr = Math.max(1, pr - 0.25); resize(); lastAdjust = now; }
+    else if (avg < 17.5 && lodScale < 1 && now - lastAdjust > 5000) { lodScale = Math.min(1, lodScale * 1.15); lodLast.t = -1; lastAdjust = now; }
     else if (avg < 20 && pr < MAX_PR && now - lastAdjust > 8000) { pr = Math.min(MAX_PR, pr + 0.25); resize(); lastAdjust = now; }
   }
   if (frames % 15 === 0) {
     const avg = frameMs.reduce((a, b) => a + b, 0) / frameMs.length;
-    stats.textContent = `${Math.round(1000 / avg)} fps · sharpness ${pr.toFixed(2)}x`;
+    stats.textContent = `${Math.round(1000 / avg)} fps · sharpness ${pr.toFixed(2)}x · trees ${Math.round(lodScale * 100)}%`;
   }
 }
 renderer.setAnimationLoop(frame);
