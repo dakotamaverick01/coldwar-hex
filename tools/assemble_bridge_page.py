@@ -10,7 +10,8 @@ maketrees = sl(619, 635)
 roof = sl(643, 649)
 looks_post = sl(991, 1146)
 world = open('tools/build_bridge_page_world.js').read()
-scene = open('tools/build_bridge_page_scene.js').read().replace('//@@DETAIL_TREES@@', open('tools/world_trees_detail.js').read())
+_bk = open('tools/world_buildings.js').read().split('//@@END_PLAN@@')
+scene = open('tools/build_bridge_page_scene.js').read().replace('//@@DETAIL_TREES@@', open('tools/world_trees_detail.js').read()).replace('//@@VILLAGE_PLAN@@', _bk[0]).replace('//@@BUILDINGS@@', _bk[1])
 cam = open('tools/build_bridge_page_cam.js').read()
 
 # ---- render section edits ----
@@ -67,6 +68,8 @@ render = render.replace("vec3 fogColAt(vec3 rd){", "uniform float uCloud;\nfloat
 render = render.replace("gl_FragColor.rgb = applyFog(gl_FragColor.rgb, vWPos);", "gl_FragColor.rgb = applyFog(gl_FragColor.rgb * cloudShade(vWPos), vWPos);")
 # leaf flutter for detailed tree leaves
 render = render.replace("        ${opt.tuft ? `{\n          #ifdef USE_INSTANCING\n            vec3 ipos", "        ${opt.flutter ? `transformed += vec3(sin(uTime*5.0 + position.x*45.0 + position.y*30.0), sin(uTime*6.1 + position.z*40.0)*0.5, cos(uTime*4.3 + position.z*45.0)) * 0.004 * max(transformed.y, 0.0);` : ''}\n        ${opt.tuft ? `{\n          #ifdef USE_INSTANCING\n            vec3 ipos", 1)
+# give every patched material a cache key from its options, so different patches never share a shader by accident
+render = render.replace("  };\n  return mat;\n}\nfunction patchDepth", "  };\n  mat.customProgramCacheKey = () => 'p' + JSON.stringify(opt);\n  return mat;\n}\nfunction patchDepth", 1)
 out = head + noise + '\n' + render + '\n' + world + '\n' + helpers + '\n' + maketrees + '\n' + roof + '\n' + scene + '\n' + lp + '\n' + cam
 open('mission-bridge.html', 'w').write(out)
 print('written', len(out))

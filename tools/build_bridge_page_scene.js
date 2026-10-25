@@ -1,3 +1,4 @@
+//@@VILLAGE_PLAN@@
 
 /* ============================================================
    5. TERRAIN: one mesh, fine over the board, stretched out to the horizon
@@ -33,7 +34,8 @@ const terrain = (() => {
     const fa = forestAmount(x, z);
     c.copy(COL.meadow).lerp(COL.ridge, smooth(2, 9, h - F));
     // field patchwork on the flat valley floor
-    const fieldZone = smooth(2.2, 3.2, d) * (1 - smooth(0.11, 0.2, slope)) * (1 - smooth(0.25, 0.5, fa)) * smooth(VIL.r * 0.7, VIL.r * 1.1, Math.hypot(x - VIL.x, z - VIL.z)) * (1 - smooth(120, 135, Math.max(Math.abs(x), Math.abs(z))));
+    const lotA = lotAmount(x, z);
+    const fieldZone = (1 - lotA) * smooth(2.2, 3.2, d) * (1 - smooth(0.11, 0.2, slope)) * (1 - smooth(0.25, 0.5, fa)) * smooth(VIL.r * 0.7, VIL.r * 1.1, Math.hypot(x - VIL.x, z - VIL.z)) * (1 - smooth(120, 135, Math.max(Math.abs(x), Math.abs(z))));
     wet[k] = 0;
     if (fieldZone > 0) wet[k] = 0.3 * fieldZone;          // field colours are drawn per pixel in the ground shader
     wet[k] = Math.max(wet[k], 1 - smooth(0.8, 2.2, d));
@@ -41,7 +43,7 @@ const terrain = (() => {
     c.lerp(COL.forest, fa * 0.5);
     c.lerp(COL.rock, smooth(0.35, 0.7, slope) * 0.7);
     const vd = Math.hypot(x - VIL.x, z - VIL.z);
-    c.lerp(COL.village, (1 - smooth(2.5, VIL.r * 0.9, vd)) * 0.6);
+    c.lerp(COL.village, Math.max((1 - smooth(2.5, VIL.r * 0.9, vd)) * 0.5, lotA * 0.7));
     const far = smooth(112, 150, Math.max(Math.abs(x) * 1.2, Math.abs(z)));
     c.lerp(COL.forest, far * 0.7);
     kind[k * 4] = (1 - fieldZone) * (1 - fa) * smooth(1.4, 2.0, d) * (1 - smooth(0.25, 0.5, slope)) * smooth(2.5, VIL.r, vd) * (1 - far);
@@ -145,91 +147,77 @@ const treeSpots = { spruce: [], broad: [] }, alleySpots = [];
   for (let z = Z0; z < Z1; z += step) for (let x = X0; x < X1; x += step) {
     const jx = x + (rand() - 0.5) * step * 0.95, jz = z + (rand() - 0.5) * step * 0.95;
     const f = forestAmount(jx, jz);
-    if (rand() > f * 0.95) continue;
+    if (rand() > f * 0.95 || nearLot(jx, jz, 0.25)) continue;
     const h = height(jx, jz);
     const lowness = 1 - smooth(1.5, 7.0, h - waterY(jx));
     ((rand() < 0.06 + 0.2 * lowness) ? treeSpots.broad : treeSpots.spruce).push([jx, h, jz]);
+  }
+  // orchards behind the farms, as around every Franconian village
+  for (const l of lots) {
+    if (l.kind !== 'farm') continue;
+    const sn = Math.sin(l.yaw), cs = Math.cos(l.yaw);
+    for (let k = 0; k < 5; k++) {
+      const lx = (rand() - 0.5) * 2.2, lz = -1.35 - rand() * 1.1;     // units, behind the yard
+      const x = l.x + lx * cs + lz * sn, z = l.z - lx * sn + lz * cs;
+      if (nearLot(x, z, 0.1) || roadDistAt(x, z) < 0.5 || riverDist(x, z) < 1.6) continue;
+      treeSpots.broad.push([x, height(x, z), z]);
+    }
   }
   // lone broadleaf trees along roads, field edges and the river for autumn colour
   for (let i = 0; i < 700; i++) {
     const x = (rand() - 0.5) * 240, r = rand(), side = rand() < 0.5 ? -1 : 1;
     const z = r < 0.5 ? riverZ(x) + side * (1.6 + rand() * 1.0) : riverZ(x) + (rand() - 0.5) * 36;
     if (riverDist(x, z) < 1.4 || roadDistAt(x, z) < 0.5 || Math.hypot(x - VIL.x, z - VIL.z) < 3 || Math.hypot(x - BX, z - BZ) < 3) continue;
-    if (forestAmount(x, z) > 0.4) continue;
+    if (forestAmount(x, z) > 0.4 || nearLot(x, z, 0.3)) continue;
     treeSpots.broad.push([x, height(x, z), z]);
   }
 }
+/* Screen-door fade: a material drops pixels in a fine dither pattern, so two versions of a tree can
+   cross-fade without sorting transparent objects. inv = true draws the complementary pixels. */
+function addFade(mat, inv = false) {
+  const prev = mat.onBeforeCompile;
+  mat.onBeforeCompile = (sh, rr) => {
+    if (prev) prev(sh, rr);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aFade; varying float vFade;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFade = aFade;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vFade;\nfloat lt_ign(vec2 p){ return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }')
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' + (inv ? 'if (lt_ign(gl_FragCoord.xy) < 1.0 - vFade) discard;' : 'if (lt_ign(gl_FragCoord.xy) > vFade) discard;'));
+  };
+  const prevKey = mat.customProgramCacheKey && mat.hasOwnProperty('customProgramCacheKey') ? mat.customProgramCacheKey.bind(mat) : () => (prev ? prev.toString() : '');
+  mat.customProgramCacheKey = () => 'fade' + (inv ? 'i' : 'n') + '|' + prevKey();
+  return mat;
+}
+// fuller far-tree shapes so the swap to detailed trees is less of a jump
+const spruceFar = merge([
+  new THREE.ConeGeometry(0.30, 0.55, 7, 1, true).translate(0, 0.38, 0),
+  new THREE.ConeGeometry(0.24, 0.48, 7, 1, true).rotateY(0.45).translate(0, 0.66, 0),
+  new THREE.ConeGeometry(0.16, 0.42, 6, 1, true).rotateY(0.9).translate(0, 0.95, 0),
+  new THREE.CylinderGeometry(0.03, 0.045, 0.3, 4, 1, true).translate(0, 0.15, 0),
+]);
+const broadFar = merge([
+  blob(0.24, 0, 0.66, 0), blob(0.2, 0.17, 0.55, 0.06), blob(0.19, -0.14, 0.57, -0.1), blob(0.17, 0.02, 0.5, 0.18), blob(0.16, -0.05, 0.82, -0.03),
+  new THREE.CylinderGeometry(0.03, 0.045, 0.45, 4, 1, true).translate(0, 0.22, 0),
+]);
 const lodRefs = { spruce: [], broad: [] };    // every simple tree, so close ones can swap to detailed shapes
 function chunked(geo, spots, palette, scaleRange, kind) {
   const CH = 60, cells = new Map();
   for (const s of spots) { const key = Math.floor(s[0] / CH) + ',' + Math.floor(s[2] / CH); (cells.get(key) || cells.set(key, []).get(key)).push(s); }
   const out = [];
-  for (const list of cells.values()) { const im = makeTrees(geo, list, palette, scaleRange); im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
-    if (kind) list.forEach((sp, i) => lodRefs[kind].push({ x: sp[0], z: sp[2], im, i })); }
+  for (const list of cells.values()) { const im = makeTrees(geo.clone(), list, palette, scaleRange);
+    im.geometry.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(list.length).fill(1), 1));
+    addFade(im.material, true); addFade(im.customDepthMaterial, true); im.frustumCulled = true; im.computeBoundingSphere(); out.push(im);
+    if (kind) list.forEach((sp, i) => lodRefs[kind].push({ x: sp[0], z: sp[2], im, i, f: 0 })); }
   return out;
 }
-const spruces = chunked(spruceGeo, treeSpots.spruce, [lin(0x284422), lin(0x30502a), lin(0x213a1c), lin(0x3a5530)], [1.3, 2.2], 'spruce');
-const broads = chunked(broadGeo, treeSpots.broad, [lin(0xb5651d), lin(0xc98a2b), lin(0x9c3d1c), lin(0xd4a73c), lin(0x6f7a2c), lin(0x8e5a22)], [1.0, 1.7], 'broad');
+const spruces = chunked(spruceFar, treeSpots.spruce, [lin(0x284422), lin(0x30502a), lin(0x213a1c), lin(0x3a5530)], [1.3, 2.2], 'spruce');
+const broads = chunked(broadFar, treeSpots.broad, [lin(0xb5651d), lin(0xc98a2b), lin(0x9c3d1c), lin(0xd4a73c), lin(0x6f7a2c), lin(0x8e5a22)], [1.0, 1.7], 'broad');
 spruces.concat(broads).forEach((m) => scene.add(m));
 window.__propCounts = { spruce: treeSpots.spruce.length, broad: treeSpots.broad.length };
 
 /* ============================================================
    8. VILLAGE, FARM AND BRIDGE (all stand-ins, labelled on screen)
    ============================================================ */
-const houses = [];
-function placeHouses(cx, cz, n, rad, roadYawZ) {
-  for (let t = 0; t < 500 && n > 0; t++) {
-    const a = rand() * Math.PI * 2, r = 1.8 + Math.sqrt(rand()) * rad;
-    const x = cx + Math.cos(a) * r * 1.2, z = cz + Math.sin(a) * r * 0.9;
-    if (riverDist(x, z) < 3 || roadDistAt(x, z) < 0.7 || Math.hypot(x - BX, z - BZ) < 4) continue;
-    if (houses.some((h) => Math.hypot(h.x - x, h.z - z) < 1.9)) continue;
-    const yaw = -Math.atan2(riverDZ(x), 1) + (rand() < 0.5 ? 0 : Math.PI / 2);
-    const big = rand() < 0.25;
-    houses.push({ x, z, y: height(x, z), yaw, w: (big ? 0.56 : 0.37) * 1.7, d: (big ? 0.8 : 0.5) * 1.7, hgt: (big ? 0.3 : 0.27) * 1.7 });
-    n--;
-  }
-}
-placeHouses(VIL.x, VIL.z, 20, 4.2);
-placeHouses(farmX, farmZ, 4, 2.2);
-{
-  const wallMat = patch(new THREE.MeshLambertMaterial({ color: 0xffffff }));
-  const roofMat = patch(new THREE.MeshLambertMaterial({ color: 0xffffff }));
-  const walls = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), wallMat, houses.length);
-  const roofs = new THREE.InstancedMesh(roofGeometry(), roofMat, houses.length);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), s = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
-  const wallCols = [lin(0xe6e0d0), lin(0xd9cfb8), lin(0xcbbf9f), lin(0xe8e4da)];
-  const roofCols = [lin(0x7a3324), lin(0x5b2a20), lin(0x3e3a38), lin(0x8a4630)];
-  houses.forEach((h, i) => {
-    q.setFromAxisAngle(up, h.yaw);
-    m4.compose(p.set(h.x, h.y - 0.08, h.z), q, s.set(h.w, h.hgt + 0.08, h.d)); walls.setMatrixAt(i, m4);
-    walls.setColorAt(i, wallCols[i % 4]);
-    m4.compose(p.set(h.x, h.y + h.hgt, h.z), q, s.set(h.w * 1.22, h.w * 0.85, h.d * 1.12)); roofs.setMatrixAt(i, m4);
-    roofs.setColorAt(i, roofCols[(i * 3) % 4]);
-  });
-  const chims = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0), patch(new THREE.MeshLambertMaterial({ color: 0x8a5a44 })), houses.length);
-  houses.forEach((h, i) => {
-    q.setFromAxisAngle(up, h.yaw);
-    const off = new THREE.Vector3(h.w * 0.2, 0, h.d * 0.3).applyAxisAngle(up, h.yaw);
-    const base = h.y + h.hgt + h.w * 0.85 * 0.45;
-    m4.compose(p.set(h.x + off.x, base, h.z + off.z), q, s.set(0.09, 0.25 + h.w * 0.2, 0.09)); chims.setMatrixAt(i, m4);
-    h.chimTop = new THREE.Vector3(h.x + off.x, base + 0.25 + h.w * 0.2, h.z + off.z);
-  });
-  [walls, roofs, chims].forEach((m) => { m.castShadow = m.receiveShadow = true; scene.add(m); });
-
-  // church: nave, tower and spire (scaled up so it reads from the overview)
-  const cy = VIL.y;
-  const white = patch(new THREE.MeshLambertMaterial({ color: 0xe9e3d3 }));
-  const dark = patch(new THREE.MeshLambertMaterial({ color: 0x3b3735 }));
-  const nave = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.34, 0.9).translate(0, 0.17, 0), white);
-  const naveRoof = new THREE.Mesh(roofGeometry(), dark); naveRoof.scale.set(0.48, 0.32, 0.95); naveRoof.position.y = 0.34;
-  const tower = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.75, 0.26).translate(0, 0.375, 0), white); tower.position.z = -0.55;
-  const spire = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 4).rotateY(Math.PI / 4).translate(0, 0.3, 0), dark); spire.position.set(0, 0.75, -0.55);
-  const church = new THREE.Group(); church.add(nave, naveRoof, tower, spire);
-  church.scale.setScalar(2.2);
-  church.position.set(VIL.x, cy - 0.08, VIL.z); church.rotation.y = 0.3;
-  church.traverse((o) => { o.castShadow = o.receiveShadow = true; });
-  scene.add(church);
-}
+//@@BUILDINGS@@
 // stand-in stone road bridge over the river
 const BR_HALF = 4.6;                                   // half length (units) along z
 const groundN = height(BX, BZ - BR_HALF), groundS = height(BX, BZ + BR_HALF);
@@ -261,12 +249,12 @@ for (const line of [roadA, roadB]) {
     const dl = Math.hypot(x2 - x, z2 - z) || 1, nx = -(z2 - z) / dl, nz = (x2 - x) / dl;
     for (const sd of [-1, 1]) {
       const tx = x + nx * sd * 0.62, tz = z + nz * sd * 0.62;
-      if (riverDist(tx, tz) < 2 || Math.hypot(tx - VIL.x, tz - VIL.z) < VIL.r || Math.abs(tz - BZ) < 5 && Math.abs(tx - BX) < 3 || rand() < 0.15) continue;
+      if (riverDist(tx, tz) < 2 ||  Math.abs(tz - BZ) < 5 && Math.abs(tx - BX) < 3 || nearLot(tx, tz, 0.15) || rand() < 0.15) continue;
       alleySpots.push([tx, height(tx, tz), tz]);
     }
   }
 }
-if (alleySpots.length) chunked(broadGeo, alleySpots, [lin(0x8e9a3a), lin(0xb5651d), lin(0xc98a2b), lin(0x6f7a2c)], [0.7, 0.95], 'broad').forEach((m) => scene.add(m));
+if (alleySpots.length) chunked(broadFar, alleySpots, [lin(0x8e9a3a), lin(0xb5651d), lin(0xc98a2b), lin(0x6f7a2c)], [0.7, 0.95], 'broad').forEach((m) => scene.add(m));
 window.__propCounts.alley = alleySpots.length;
 //@@DETAIL_TREES@@
 
@@ -310,5 +298,7 @@ const smoke = (() => {
 scene.add(smoke);
 
 const bridgeLabelPos = new THREE.Vector3(BX, bridgeTop + 0.6, BZ);
-const villageLabelPos = new THREE.Vector3(VIL.x, VIL.y + 3.2, VIL.z);
-const farmLabelPos = new THREE.Vector3(farmX, height(farmX, farmZ) + 1.6, farmZ);
+const churchLot = lots.find((l) => l.kind === 'church') || VIL;
+const villageLabelPos = new THREE.Vector3(churchLot.x, VIL.y + 3.6, churchLot.z);
+const northLot = lots.find((l) => l.z < riverZ(l.x)) || { x: farmX, z: farmZ };
+const farmLabelPos = new THREE.Vector3(northLot.x, height(northLot.x, northLot.z) + 1.8, northLot.z);

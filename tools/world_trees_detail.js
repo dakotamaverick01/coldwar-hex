@@ -72,8 +72,9 @@ const DETAIL_CAP = { spruce: 50, broad: 35 };   // per shape variant
   const barkMatS = patch(new THREE.MeshLambertMaterial({ map: barkTex, vertexColors: true, color: 0x8a6e58 }), { wind: true });
   const barkMatB = patch(new THREE.MeshLambertMaterial({ map: barkTex, vertexColors: true, color: 0x8f8678 }), { wind: true });
   const leafMat = leafMaterial();
-  const leafDepth = patchDepth(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: leafTex, alphaTest: 0.42 }));
-  const barkDepth = patchDepth(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }));
+  const leafDepth = addFade(patchDepth(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: leafTex, alphaTest: 0.42 })));
+  const barkDepth = addFade(patchDepth(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })));
+  addFade(barkMatS); addFade(barkMatB); addFade(leafMat);
   for (const v of TREEJ.variants) {
     const bg = new THREE.BufferGeometry();
     bg.setAttribute('position', new THREE.BufferAttribute(tf32(v.bark.pos), 3));
@@ -93,6 +94,8 @@ const DETAIL_CAP = { spruce: 50, broad: 35 };   // per shape variant
     const cap = DETAIL_CAP[v.kind];
     const bark = new THREE.InstancedMesh(bg, v.kind === 'spruce' ? barkMatS : barkMatB, cap);
     const leaves = new THREE.InstancedMesh(lg, leafMat, cap);
+    bg.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1));
+    lg.setAttribute('aFade', new THREE.InstancedBufferAttribute(new Float32Array(cap).fill(1), 1));
     leaves.customDepthMaterial = leafDepth; bark.customDepthMaterial = barkDepth;
     for (const m of [bark, leaves]) { m.count = 0; m.frustumCulled = false; m.castShadow = m.receiveShadow = true; scene.add(m); }
     leaves.setColorAt(0, new THREE.Color(1, 1, 1)); leaves.instanceColor.needsUpdate = true;
@@ -109,8 +112,9 @@ for (const kind of ['spruce', 'broad']) for (const ref of lodRefs[kind]) {
 const ZERO_M = new THREE.Matrix4().makeScale(0, 0, 0);
 const lodFrustum = new THREE.Frustum(), lodPM = new THREE.Matrix4(), lodSphere = new THREE.Sphere(new THREE.Vector3(), 2.2);
 let lodScale = 1;   // drops automatically if the phone struggles (see the frame loop)
-let lodActive = new Set(), lodLast = { t: -1, x: 1e9, z: 1e9, d: 0 }, lodTris = 0;
-function updateTreeLOD(now) {
+let lodWant = new Set(), lodActive = new Set(), lodLast = { t: -1, x: 1e9, z: 1e9, d: 0 }, lodTris = 0, lodPrevT = 0;
+const FADE_S = 0.7;     // seconds for a tree to cross-fade between its simple and detailed shape
+function selectTrees(now) {
   const camX = camera.position.x, camZ = camera.position.z;
   const on = cam.dist < 44;
   const cx = mix(cam.tx, camX, 0.25), cz = mix(cam.tz, camZ, 0.25);
@@ -126,30 +130,43 @@ function updateTreeLOD(now) {
       for (const ref of list) { const d = Math.hypot(ref.x - cx, ref.z - cz); if (d >= R) continue; lodSphere.center.set(ref.x, height(ref.x, ref.z) + 0.8, ref.z); if (lodFrustum.intersectsSphere(lodSphere)) pick[ref.kind].push([d, ref]); }
     }
   }
-  const next = new Set();
-  const counts = { spruce: detailSets.spruce.map(() => 0), broad: detailSets.broad.map(() => 0) };
-  const m4 = new THREE.Matrix4(), col = new THREE.Color(), touched = new Set();
-  lodTris = 0;
+  lodWant = new Set();
   for (const kind of ['spruce', 'broad']) {
     pick[kind].sort((p, q) => p[0] - q[0]);
-    for (const [, ref] of pick[kind]) {
-      const set = detailSets[kind][ref.v], k = counts[kind][ref.v];
-      if (k >= Math.round(set.cap * lodScale)) continue;
-      if (!ref.saved) { ref.saved = new THREE.Matrix4(); ref.im.getMatrixAt(ref.i, ref.saved); }
-      set.bark.setMatrixAt(k, ref.saved); set.leaves.setMatrixAt(k, ref.saved);
-      ref.im.getColorAt(ref.i, col); set.leaves.setColorAt(k, col.multiplyScalar(kind === 'spruce' ? 1.15 : 1.3));
-      counts[kind][ref.v] = k + 1;
-      next.add(ref);
-      if (!lodActive.has(ref)) { ref.im.setMatrixAt(ref.i, ZERO_M); touched.add(ref.im); }
-    }
+    const used = detailSets[kind].map(() => 0);
+    for (const [, ref] of pick[kind]) { const cap = Math.round(detailSets[kind][ref.v].cap * lodScale * 0.85); if (used[ref.v] >= cap) continue; used[ref.v]++; lodWant.add(ref); }
   }
-  for (const ref of lodActive) if (!next.has(ref)) { ref.im.setMatrixAt(ref.i, ref.saved); touched.add(ref.im); }
-  lodActive = next;
-  for (const im of touched) im.instanceMatrix.needsUpdate = true;
+  for (const ref of lodWant) lodActive.add(ref);
+}
+function updateTreeLOD(now) {
+  selectTrees(now);
+  const dt = Math.min(0.1, (now - lodPrevT) / 1000); lodPrevT = now;
+  const counts = { spruce: detailSets.spruce.map(() => 0), broad: detailSets.broad.map(() => 0) };
+  const col = new THREE.Color(), touched = new Set(), gone = [];
+  for (const ref of lodActive) {
+    const target = lodWant.has(ref) ? 1 : 0;
+    ref.f = Math.max(0, Math.min(1, ref.f + (target ? 1 : -1) * dt / FADE_S));
+    if (!ref.saved) { ref.saved = new THREE.Matrix4(); ref.im.getMatrixAt(ref.i, ref.saved); }
+    const lowFade = ref.im.geometry.attributes.aFade;
+    if (lowFade.array[ref.i] !== 1 - ref.f) { lowFade.array[ref.i] = 1 - ref.f; touched.add(lowFade); }
+    if (ref.f <= 0 && !target) { gone.push(ref); continue; }
+    const set = detailSets[ref.kind][ref.v], k = counts[ref.kind][ref.v];
+    if (k >= set.cap) continue;
+    set.bark.setMatrixAt(k, ref.saved); set.leaves.setMatrixAt(k, ref.saved);
+    ref.im.getColorAt(ref.i, col); set.leaves.setColorAt(k, col.multiplyScalar(ref.kind === 'spruce' ? 1.15 : 1.3));
+    set.bark.geometry.attributes.aFade.array[k] = ref.f; set.leaves.geometry.attributes.aFade.array[k] = ref.f;
+    counts[ref.kind][ref.v] = k + 1;
+  }
+  for (const ref of gone) lodActive.delete(ref);
+  for (const a of touched) a.needsUpdate = true;
+  lodTris = 0;
   for (const kind of ['spruce', 'broad']) detailSets[kind].forEach((set, vi) => {
-    set.bark.count = set.leaves.count = counts[kind][vi];
+    const n = counts[kind][vi];
+    if (n === 0 && set.bark.count === 0) return;
+    set.bark.count = set.leaves.count = n;
     set.bark.instanceMatrix.needsUpdate = set.leaves.instanceMatrix.needsUpdate = true;
+    set.bark.geometry.attributes.aFade.needsUpdate = set.leaves.geometry.attributes.aFade.needsUpdate = true;
     if (set.leaves.instanceColor) set.leaves.instanceColor.needsUpdate = true;
-    lodTris += counts[kind][vi] * TREEJ.variants.filter((v) => v.kind === kind)[vi].tris;
+    lodTris += n * TREEJ.variants.filter((v) => v.kind === kind)[vi].tris;
   });
 }
