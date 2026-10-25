@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hof Gap data check</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #14171a; color: #e6e6e6; font: 14px/1.4 -apple-system, system-ui, sans-serif; }
+  header { padding: 10px 12px 6px; }
+  h1 { font-size: 16px; margin: 0 0 2px; }
+  .sub { color: #9aa4ad; font-size: 12px; }
+  .bar { display: flex; gap: 6px; padding: 6px 12px; flex-wrap: wrap; }
+  button { background: #2a3037; color: #e6e6e6; border: 1px solid #3c444d; border-radius: 8px; padding: 9px 12px; font-size: 14px; }
+  button.on { background: #3d6a4f; border-color: #5d9a74; }
+  #wrap { position: relative; width: 100%; }
+  canvas { display: block; width: 100%; height: auto; touch-action: manipulation; }
+  #info { padding: 8px 12px; font-size: 13px; white-space: pre-wrap; min-height: 3.2em; }
+  #status { padding: 0 12px 14px; font-size: 12px; color: #9aa4ad; white-space: pre-wrap; }
+  .legend { padding: 0 12px 4px; font-size: 12px; color: #9aa4ad; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hof Gap data check</h1>
+  <div class="sub">Real height data, 15 x 15 km, north is up. Tap the map to read a height.</div>
+</header>
+<div class="bar">
+  <button id="bShade" class="on">Shaded relief</button>
+  <button id="bColor">Height colours</button>
+  <button id="bFeat" class="on">Rivers, roads, rail</button>
+</div>
+<div id="wrap"><canvas id="cv" width="600" height="600"></canvas></div>
+<div id="info">Tap the map.</div>
+<div class="legend" id="legend"></div>
+<div id="status">Loading...</div>
+<script>
+"use strict";
+const R = 6371008.8;
+let meta = null, H = null, feats = null;
+let mode = "shade", showFeat = true, marker = null;
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+const statusEl = document.getElementById("status"), infoEl = document.getElementById("info");
+const base = new URL(".", location.href);
+
+// ---- loading ----
+async function load() {
+  const lines = [];
+  meta = await (await fetch(new URL("data/hof_heights.json", base))).json();
+  const buf = await (await fetch(new URL("data/" + meta.file, base))).arrayBuffer();
+  H = new Uint16Array(buf);
+  lines.push(`Heights: ${meta.width} x ${meta.height} samples, ${meta.sample_spacing_m} m apart, ${(buf.byteLength/1024).toFixed(0)} KB`);
+  lines.push(`Height range: ${meta.min_m} to ${meta.max_m} m`);
+  lines.push(`Box: lat ${meta.box.south} to ${meta.box.north}, lon ${meta.box.west} to ${meta.box.east}`);
+  try {
+    const r = await fetch(new URL("data/hof_features.json", base));
+    if (r.ok) {
+      const txt = await r.text();
+      feats = JSON.parse(txt);
+      const c = k => (feats[k] || []).length;
+      lines.push(`Map features: ${(txt.length/1024).toFixed(0)} KB, ${c("lines")} lines, ${c("areas")} areas, ${c("buildings")} buildings`);
+    } else lines.push("Map features: file not added yet (data/hof_features.json), so only heights are shown.");
+  } catch (e) { lines.push("Map features: could not be read (" + e.message + ")."); }
+  statusEl.textContent = lines.join("\n");
+  draw();
+}
+
+// ---- drawing ----
+function hAt(i, j) { i = Math.max(0, Math.min(meta.width - 1, i)); j = Math.max(0, Math.min(meta.height - 1, j)); return meta.base_m + H[j * meta.width + i] * meta.metres_per_unit; }
+function ramp(t) { // low = dark green, mid = tan, high = pale
+  const stops = [[0, 52, 92, 64], [0.35, 126, 150, 88], [0.65, 190, 172, 112], [1, 238, 232, 214]];
+  t = Math.max(0, Math.min(1, t));
+  for (let k = 1; k < stops.length; k++) if (t <= stops[k][0]) {
+    const a = stops[k - 1], b = stops[k], u = (t - a[0]) / (b[0] - a[0]);
+    return [a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u];
+  }
+  return [238, 232, 214];
+}
+let reliefImg = null;
+function buildRelief() {
+  const W = meta.width, Hh = meta.height, sp = meta.sample_spacing_m;
+  const img = ctx.createImageData(W, Hh);
+  const az = 315 * Math.PI / 180, alt = 38 * Math.PI / 180, ex = 3.5;
+  const lx = Math.sin(az) * Math.cos(alt), ly = Math.cos(az) * Math.cos(alt), lz = Math.sin(alt);
+  for (let j = 0; j < Hh; j++) for (let i = 0; i < W; i++) {
+    const dzdx = (hAt(i + 1, j) - hAt(i - 1, j)) / (2 * sp) * ex;   // east
+    const dzdy = (hAt(i, j - 1) - hAt(i, j + 1)) / (2 * sp) * ex;   // north (row 0 is north)
+    const nl = Math.hypot(dzdx, dzdy, 1);
+    let s = (-dzdx * lx - dzdy * ly + lz) / nl;                      // 0..1
+    s = Math.max(0, Math.min(1, s));
+    const t = (hAt(i, j) - meta.min_m) / (meta.max_m - meta.min_m);
+    const o = (j * W + i) * 4;
+    let c;
+    if (mode === "shade") { const g = 20 + 235 * s; c = [g * 0.97, g * 1.0, g * 0.93]; }
+    else { const col = ramp(t), k = 0.55 + 0.6 * s; c = [col[0] * k, col[1] * k, col[2] * k]; }
+    img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
+  }
+  reliefImg = img;
+}
+const half = 7500;
+const X = x => (x + half) / (2 * half) * cv.width;
+const Y = y => (half - y) / (2 * half) * cv.height;
+function path(p, close) { ctx.beginPath(); p.forEach((q, k) => k ? ctx.lineTo(X(q[0]), Y(q[1])) : ctx.moveTo(X(q[0]), Y(q[1]))); if (close) ctx.closePath(); }
+function drawFeatures() {
+  if (!feats) return;
+  for (const a of feats.areas || []) {
+    path(a.p, true);
+    ctx.fillStyle = a.t === "water" ? "rgba(70,130,220,0.55)" : a.t === "forest" ? "rgba(30,90,40,0.38)" : a.t === "village" ? "rgba(200,160,120,0.25)" : "rgba(0,0,0,0)";
+    ctx.fill();
+  }
+  const style = {
+    river: ["#2f7cf0", 2.2], stream: ["#5aa0ff", 1], road: ["#f2d27a", 1.4], track: ["#b58a4b", 0.8],
+    rail: ["#ffffff", 1.4], hedge: ["#2f9c3a", 0.6], wall: ["#d0d0d0", 0.6]
+  };
+  for (const l of feats.lines || []) {
+    const s = style[l.t] || ["#ff00ff", 1];
+    path(l.p, false); ctx.strokeStyle = s[0]; ctx.lineWidth = s[1]; ctx.setLineDash(l.t === "rail" ? [4, 3] : []); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#1a1a1a";
+  for (const b of feats.buildings || []) { path(b, true); ctx.fill(); }
+  // bridges as red dots
+  ctx.fillStyle = "#ff4040";
+  for (const l of feats.lines || []) if (l.b) { const m = l.p[l.p.length >> 1]; ctx.fillRect(X(m[0]) - 2, Y(m[1]) - 2, 4, 4); }
+}
+function draw() {
+  if (!meta) return;
+  if (!reliefImg || reliefImg._mode !== mode) { buildRelief(); reliefImg._mode = mode; }
+  ctx.putImageData(reliefImg, 0, 0);
+  if (showFeat) drawFeatures();
+  // scale bar, 2 km
+  ctx.fillStyle = "#fff"; ctx.fillRect(14, cv.height - 18, X(-half + 2000) - X(-half), 4);
+  ctx.font = "12px sans-serif"; ctx.fillText("2 km", 14, cv.height - 24);
+  if (marker) { ctx.strokeStyle = "#ff3030"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(marker[0], marker[1], 7, 0, 7); ctx.moveTo(marker[0] - 12, marker[1]); ctx.lineTo(marker[0] + 12, marker[1]); ctx.moveTo(marker[0], marker[1] - 12); ctx.lineTo(marker[0], marker[1] + 12); ctx.stroke(); }
+  document.getElementById("legend").textContent = mode === "shade" ? "Shaded relief: light from the north-west. Blue = rivers and water, yellow = roads, brown = tracks, white dashes = railway, green = forest, red dots = bridges." : "Height colours: dark green = low (" + meta.min_m + " m), pale = high (" + meta.max_m + " m).";
+}
+
+// ---- tap to read ----
+cv.addEventListener("click", ev => {
+  if (!meta) return;
+  const r = cv.getBoundingClientRect();
+  const px = (ev.clientX - r.left) / r.width * cv.width, py = (ev.clientY - r.top) / r.height * cv.height;
+  marker = [px, py];
+  const x = px / cv.width * 2 * half - half, y = half - py / cv.height * 2 * half;
+  const i = Math.floor(px / cv.width * meta.width), j = Math.floor(py / cv.height * meta.height);
+  const lat0 = (meta.box.south + meta.box.north) / 2, lon0 = (meta.box.west + meta.box.east) / 2;
+  const lat = lat0 + y / R * 180 / Math.PI, lon = lon0 + x / (R * Math.cos(lat0 * Math.PI / 180)) * 180 / Math.PI;
+  infoEl.textContent = `Height ${hAt(i, j).toFixed(0)} m\nLat ${lat.toFixed(4)}, lon ${lon.toFixed(4)}\n${(x / 1000).toFixed(2)} km east, ${(y / 1000).toFixed(2)} km north of the box centre`;
+  draw();
+});
+function setMode(m) { mode = m; document.getElementById("bShade").classList.toggle("on", m === "shade"); document.getElementById("bColor").classList.toggle("on", m === "color"); draw(); }
+document.getElementById("bShade").onclick = () => setMode("shade");
+document.getElementById("bColor").onclick = () => setMode("color");
+document.getElementById("bFeat").onclick = e => { showFeat = !showFeat; e.target.classList.toggle("on", showFeat); draw(); };
+
+// test hooks for screenshots
+window.__dc = { setMode, get stats() { return meta && { min: meta.min_m, max: meta.max_m, hasFeatures: !!feats }; }, tap(fx, fy) { const r = cv.getBoundingClientRect(); cv.dispatchEvent(new MouseEvent("click", { clientX: r.left + fx * r.width, clientY: r.top + fy * r.height })); } };
+load().catch(e => { statusEl.textContent = "Failed to load: " + e.message; });
+</script>
+</body>
+</html>

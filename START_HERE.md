@@ -67,15 +67,23 @@ Measured (software browser): about 720,000 triangles and 82 draw calls per frame
 
 ## NEXT
 1. DONE: builder checked look D on his iPhone: steady 59-60 fps, "looks stunning"; wants real textures and shaders later. Performance headroom confirmed.
-2. Next: Task 0 (Sonnet, small): real Hof Gap elevation and OpenStreetMap data.
+2. Task 0 (Sonnet) PART 1 DONE 2026-10-25: real Hof Gap elevation saved in /data, check page built. PART 2 WAITING ON THE BUILDER: the OpenStreetMap server is blocked in the workspace, so the builder saves two small files from his iPhone with osm-fetch.html and attaches them in chat (steps in the last report). Then Claude shrinks them into data/hof_features.json, adds them to data-check.html, and finishes Task 0.
 3. Then Task 2: one 2-3 km mission map (the bridge) on real terrain in look D with small hexes (reuse the ground shader and props code from look-test.html). Then units with 2 action points.
+
+## DATA (Task 0, 2026-10-25; box not yet confirmed by the builder)
+- Box (about 15 x 15 km, centre 50.3325 N, 11.8955 E): south 50.26505, north 50.39995, west 11.78984, east 12.00116. Hof (50.317 N, 11.917 E) is inside, lower right of centre; the Saale valley runs from the lower right to the upper left.
+- Local map units: metres east (x) and north (y) of the centre, box is -7500 to +7500 in both. Exact formulas are in data/hof_heights.json.
+- Elevation: data/hof_heights.bin (720 KB) and hof_heights.json. 600 x 600 samples, 25 m apart, 449 to 671 m, read with height = base + value * 0.1. Made by tools/make_heights.py from AWS Terrain Tiles (EU-DEM / SRTM). Source resolution is about 24 m, so 25 m is the finest this free source gives.
+- Map features: NOT yet in the repo (server blocked in the workspace). Plan: file data/hof_features.json, format {lines:[{t,p,b?}], areas:[{t,p}], buildings:[[[x,y]...]]} in local metres; t is river, stream, road, track, rail, hedge or wall for lines and forest, water or village for areas; b=1 marks a bridge. data-check.html already draws this format.
+- Check page: /data-check.html. Phone download page: /osm-fetch.html. Both are read-only helpers; no game code touched.
 
 ## HANDOFF (any AI can pick up from here)
 - Project: turn-based 3D hex tactics game (company level, Company of Heroes feel), 1985 West Germany, phone-first, web (Three.js).
 - Current phase: Phase 1 step 1 DONE (iPhone link confirmed 2026-10-25). Look test (Task 1) BUILT 2026-10-25 at look-test.html; look direction now decided (clear morning, Field of Command reference). Task 1b (look D) DONE 2026-10-25. Next: builder's iPhone check, then Task 0. The backup branch "backup/before-look-test" holds the state before it.
 - Builder has never used GitHub or a terminal. Describe only what to click or look at; never say commit, push, branch, repo, or terminal without a plain-language definition first.
 - Rules: plain English, define jargon, small playable steps, stop after each phase for a yes, one-line self-check with every change, original names, CC0/own assets only logged in ASSET_CREDITS.md, no mention of the builder's profession anywhere public.
-- Next 3 tasks: (1) DONE: iPhone check of look D (59-60 fps), (2) Task 0: real Hof Gap terrain data (Sonnet; ask builder before starting), (3) Task 2: the bridge mission map in look D. Then units with 2 action points (Phase B in PLAN.md).
+- Next 3 tasks: (1) DONE: iPhone check of look D (59-60 fps), (2) Task 0: elevation DONE; the OpenStreetMap part waits for the builder's two phone-saved files (hof_osm_map.json, hof_osm_buildings.json) from /osm-fetch.html. Then simplify them into data/hof_features.json (target under 2 MB), update the pending row in ASSET_CREDITS.md, add them to data-check.html and compare with a real map. (3) Task 2: the bridge mission map in look D. Then units with 2 action points (Phase B in PLAN.md).
+- Workspace network: s3.amazonaws.com (elevation tiles) works; overpass-api.de is blocked (connection closed by the proxy). Do not try other routes around a block.
 - Testing tip: look-test.html has a test hook (window.__lt: snapLook, showHexAt, pause) and "?pr=2" in the address locks the resolution for screenshots.
 
 ## Housekeeping

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hof Gap map download</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 14px; background: #14171a; color: #e6e6e6; font: 16px/1.45 -apple-system, system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  p { margin: 6px 0; }
+  .card { background: #1d2227; border: 1px solid #333b44; border-radius: 12px; padding: 12px; margin: 14px 0; }
+  button, a.save { display: block; width: 100%; box-sizing: border-box; text-align: center; background: #3d6a4f; color: #fff; border: 0; border-radius: 10px; padding: 14px; font-size: 17px; margin-top: 10px; text-decoration: none; }
+  button:disabled { background: #444; }
+  a.save { background: #2f6fb5; }
+  .msg { font-size: 14px; color: #b7c0c8; margin-top: 8px; white-space: pre-wrap; }
+  .ok { color: #8fe3a5; } .bad { color: #ff9b8f; }
+  small { color: #8b949c; }
+</style>
+</head>
+<body>
+<h1>Hof Gap map download</h1>
+<p>This page asks the free OpenStreetMap server for the rivers, roads, railway, forests and buildings in the game's 15 x 15 km box, and lets you save the result as a file on your iPhone. Then you attach the file in the Claude chat.</p>
+
+<div class="card">
+  <b>File 1: rivers, roads, railway, forests, water</b>
+  <div class="msg">Usually 3 to 8 MB. Takes up to a minute.</div>
+  <button id="go1">1. Download file 1</button>
+  <div class="msg" id="m1"></div>
+  <div id="s1"></div>
+</div>
+
+<div class="card">
+  <b>File 2: building outlines</b>
+  <div class="msg">Usually 5 to 15 MB. Takes up to two minutes. Keep this page open and the screen on.</div>
+  <button id="go2">1. Download file 2</button>
+  <div class="msg" id="m2"></div>
+  <div id="s2"></div>
+</div>
+
+<div class="card">
+  <b>Then, in the Claude chat</b>
+  <div class="msg">Tap the + button, tap Files, open Downloads, and pick both files (hof_osm_map.json and hof_osm_buildings.json). Send them with the message "attached".</div>
+</div>
+
+<div class="card">
+  <b>Server</b>
+  <select id="srv" style="width:100%;padding:10px;font-size:16px;background:#2a3037;color:#e6e6e6;border:1px solid #3c444d;border-radius:8px;margin-top:6px">
+    <option value="https://overpass-api.de/api/interpreter">overpass-api.de (default)</option>
+    <option value="https://overpass.kumi.systems/api/interpreter">overpass.kumi.systems (use if the first one fails)</option>
+  </select>
+</div>
+<p><small>Map data &copy; OpenStreetMap contributors, ODbL licence (openstreetmap.org/copyright).</small></p>
+
+<script>
+"use strict";
+const BB = "50.264,11.788,50.401,12.002"; // south, west, north, east (a hair wider than the game box)
+const Q1 = `[out:json][timeout:180];
+(
+ way["waterway"~"^(river|stream|canal)$"](${BB});
+ way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|living_street|track|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$"](${BB});
+ way["railway"~"^(rail|light_rail|narrow_gauge)$"](${BB});
+ way["barrier"~"^(hedge|wall|retaining_wall)$"](${BB});
+ way["natural"="tree_row"](${BB});
+ way["natural"="wood"](${BB});
+ way["landuse"="forest"](${BB});
+ relation["natural"="wood"](${BB});
+ relation["landuse"="forest"](${BB});
+ way["natural"="water"](${BB});
+ relation["natural"="water"](${BB});
+ way["landuse"~"^(residential|industrial|commercial|retail|military)$"](${BB});
+);
+out geom;`;
+const Q2 = `[out:json][timeout:180];
+way["building"](${BB});
+out geom;`;
+
+function setup(n, query, filename) {
+  const btn = document.getElementById("go" + n), msg = document.getElementById("m" + n), slot = document.getElementById("s" + n);
+  btn.onclick = async () => {
+    btn.disabled = true; slot.innerHTML = ""; msg.className = "msg"; msg.textContent = "Asking the server... (this can take a while)";
+    const t0 = Date.now();
+    try {
+      const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 300000);
+      const res = await fetch(document.getElementById("srv").value, { method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "data=" + encodeURIComponent(query) });
+      const text = await res.text(); clearTimeout(timer);
+      if (!res.ok) throw new Error("Server said " + res.status + ". " + text.slice(0, 150));
+      let json; try { json = JSON.parse(text); } catch (e) { throw new Error("Reply was not a map file: " + text.slice(0, 150)); }
+      if (json.remark && /error|timeout|out of memory/i.test(json.remark)) throw new Error("Server problem: " + json.remark);
+      const n_el = (json.elements || []).length;
+      if (n_el === 0) throw new Error("The server returned no map items.");
+      const blob = new Blob([text], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const mb = (blob.size / 1048576).toFixed(1);
+      msg.className = "msg ok"; msg.textContent = `Got ${n_el} map items, ${mb} MB, in ${Math.round((Date.now() - t0) / 1000)} s. Now tap the blue button to save it.`;
+      const a = document.createElement("a"); a.className = "save"; a.href = url; a.download = filename; a.textContent = "2. Save " + filename; slot.appendChild(a);
+      const file = new File([blob], filename, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        const b = document.createElement("button"); b.style.background = "#555"; b.textContent = "Or: share / Save to Files";
+        b.onclick = () => navigator.share({ files: [file] }).catch(() => {}); slot.appendChild(b);
+      }
+    } catch (e) {
+      msg.className = "msg bad"; msg.textContent = "Did not work: " + e.message + "\nTry again, or switch the server at the bottom of the page.";
+    }
+    btn.disabled = false;
+  };
+}
+setup(1, Q1, "hof_osm_map.json");
+setup(2, Q2, "hof_osm_buildings.json");
+</script>
+</body>
+</html>

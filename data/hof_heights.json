@@ -1,0 +1,26 @@
+{
+ "name": "Hof Gap height grid",
+ "file": "hof_heights.bin",
+ "encoding": "uint16 little-endian, row-major, row 0 = north edge, column 0 = west edge",
+ "width": 600,
+ "height": 600,
+ "sample_spacing_m": 25.0,
+ "metres_per_unit": 0.1,
+ "base_m": 449,
+ "how_to_read": "height_m = base_m + value * metres_per_unit",
+ "min_m": 449.1,
+ "max_m": 671.4,
+ "box": {
+  "south": 50.26505,
+  "north": 50.39995,
+  "west": 11.78984,
+  "east": 12.00116
+ },
+ "centre": {
+  "lat": 50.3325,
+  "lon": 11.8955
+ },
+ "local_metres": "x = east metres, y = north metres from the centre: x = R*cos(lat0)*dlon_rad, y = R*dlat_rad, R = 6371008.8 m. Box is x,y in [-7500, 7500]. Sample (col i, row j) is at x = -7500 + 12.5 + 25*i, y = 7500 - 12.5 - 25*j.",
+ "source": "AWS Terrain Tiles (Terrarium PNG, zoom 12, about 24 m per pixel at this latitude), resampled to 25 m",
+ "credit": "Terrain data from AWS Terrain Tiles. Europe terrain data produced using Copernicus data and information funded by the European Union - EU-DEM layers. SRTM data courtesy of the U.S. Geological Survey."
+}
