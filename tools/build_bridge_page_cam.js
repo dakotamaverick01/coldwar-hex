@@ -2,9 +2,9 @@
 /* ============================================================
    14. CAMERA: drag to turn, pinch to zoom, swoop low when close
    ============================================================ */
-const cam = { yaw: 1.75, pitchOff: 0, dist: 95, tx: 0, tz: 4 };
+const cam = { yaw: 1.75, pitchOff: 0, dist: 120, tx: 0, tz: 4 };
 let camAnim = null;
-const DMIN = 4, DMAX = 150;
+const DMIN = 4, DMAX = 240;
 function autoPitch(dist) { const t = smooth(0, 1, (dist - DMIN) / (DMAX - DMIN)); return mix(0.1, cur.pitchMax, Math.pow(t, 0.7)); }
 let groundY = height(cam.tx, cam.tz), camPitchUsed = 0.5;
 function updateCamera(dt) {
@@ -50,7 +50,7 @@ function updateCamera(dt) {
 }
 function flyTo(to, dur = 1.6) { camAnim = { t: 0, dur, from: { ...cam }, to: { ...cam, ...to } }; }
 const VIEWS = {
-  over: { dist: 95, pitchOff: 0, tx: 0, tz: 4, yaw: 1.75 },
+  over: { dist: 120, pitchOff: 0, tx: 0, tz: 4, yaw: 1.75 },
   low:  { dist: 15, pitchOff: -0.08, tx: BX, tz: BZ - 1.5, yaw: 1.05 },
 };
 document.getElementById('vOver').addEventListener('click', () => flyTo(VIEWS.over, 2.2));

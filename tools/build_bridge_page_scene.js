@@ -9,15 +9,15 @@ const COL = {
   wheat: lin(0x6c8838), fallow: lin(0x7d6c45), forest: lin(0x2b2a1b), rock: lin(0x726c62),
   road: lin(0x8c8271), mud: lin(0x3b3226), village: lin(0x675d47), ridge: lin(0x5a5838),
 };
-function axis(inner, outerMax) {
+function axis(inner, outerMax, fine = 1) {
   const a = [];
-  for (let v = -inner; v <= inner + 1e-6; v += 1) a.push(v);
+  for (let v = -inner; v <= inner + 1e-6; v += fine) a.push(v);
   let s = 2, v = inner; const hi = [];
   while (v < outerMax) { v += s; s *= 1.25; hi.push(v); }
   return [...hi.reverse().map((q) => -q), ...a, ...hi.reverse()];
 }
 const terrain = (() => {
-  const xs = axis(112, 560), zs = axis(136, 560);
+  const xs = axis(172, 640, 1.5), zs = axis(189, 640, 1.5);
   const NX = xs.length, NZ = zs.length;
   const cnt = NX * NZ;
   const pos = new Float32Array(cnt * 3), col = new Float32Array(cnt * 3), wet = new Float32Array(cnt), kind = new Float32Array(cnt * 4);
@@ -35,7 +35,7 @@ const terrain = (() => {
     c.copy(COL.meadow).lerp(COL.ridge, smooth(2, 9, h - F));
     // field patchwork on the flat valley floor
     const lotA = lotAmount(x, z);
-    const fieldZone = (1 - lotA) * smooth(2.2, 3.2, d) * (1 - smooth(0.11, 0.2, slope)) * (1 - smooth(0.25, 0.5, fa)) * smooth(VIL.r * 0.7, VIL.r * 1.1, Math.hypot(x - VIL.x, z - VIL.z)) * (1 - smooth(120, 135, Math.max(Math.abs(x), Math.abs(z))));
+    const fieldZone = (1 - lotA) * smooth(2.2, 3.2, d) * (1 - smooth(0.11, 0.2, slope)) * (1 - smooth(0.25, 0.5, fa)) * smooth(VIL.r * 0.7, VIL.r * 1.1, Math.hypot(x - VIL.x, z - VIL.z)) * (1 - smooth(180, 200, Math.max(Math.abs(x), Math.abs(z))));
     wet[k] = 0;
     if (fieldZone > 0) wet[k] = 0.3 * fieldZone;          // field colours are drawn per pixel in the ground shader
     wet[k] = Math.max(wet[k], 1 - smooth(0.8, 2.2, d));
@@ -44,13 +44,13 @@ const terrain = (() => {
     c.lerp(COL.rock, smooth(0.35, 0.7, slope) * 0.7);
     const vd = Math.hypot(x - VIL.x, z - VIL.z);
     c.lerp(COL.village, Math.max((1 - smooth(2.5, VIL.r * 0.9, vd)) * 0.5, lotA * 0.7));
-    const far = smooth(112, 150, Math.max(Math.abs(x) * 1.2, Math.abs(z)));
+    const far = smooth(172, 215, Math.max(Math.abs(x) * 1.1, Math.abs(z)));
     c.lerp(COL.forest, far * 0.7);
     kind[k * 4] = (1 - fieldZone) * (1 - fa) * smooth(1.4, 2.0, d) * (1 - smooth(0.25, 0.5, slope)) * smooth(2.5, VIL.r, vd) * (1 - far);
     kind[k * 4 + 1] = Math.max(0, fieldZone) * (1 - fa);
     kind[k * 4 + 2] = fa * (1 - far * 0.5);
     // baked ambient occlusion and ridge light: hollows a little darker, crests a little brighter
-    if (cxm === x && czm === z && Math.abs(x) < 150 && Math.abs(z) < 170) {
+    if (cxm === x && czm === z && Math.abs(x) < 200 && Math.abs(z) < 220) {
       let r1 = 0, r2 = 0;
       for (const [ox, oz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { r1 += height(x + ox * 3, z + oz * 3); r2 += height(x + ox * 10, z + oz * 10); }
       const cv = h - (r1 / 4) * 0.5 - (r2 / 4) * 0.5;
@@ -143,7 +143,7 @@ scene.add(river);
    ============================================================ */
 const treeSpots = { spruce: [], broad: [] }, alleySpots = [];
 {
-  const X0 = -150, X1 = 150, Z0 = -170, Z1 = 170, step = 0.98;
+  const X0 = -190, X1 = 190, Z0 = -210, Z1 = 210, step = 0.98;
   for (let z = Z0; z < Z1; z += step) for (let x = X0; x < X1; x += step) {
     const jx = x + (rand() - 0.5) * step * 0.95, jz = z + (rand() - 0.5) * step * 0.95;
     const f = forestAmount(jx, jz);
@@ -164,8 +164,8 @@ const treeSpots = { spruce: [], broad: [] }, alleySpots = [];
     }
   }
   // lone broadleaf trees along roads, field edges and the river for autumn colour
-  for (let i = 0; i < 700; i++) {
-    const x = (rand() - 0.5) * 240, r = rand(), side = rand() < 0.5 ? -1 : 1;
+  for (let i = 0; i < 1100; i++) {
+    const x = (rand() - 0.5) * 380, r = rand(), side = rand() < 0.5 ? -1 : 1;
     const z = r < 0.5 ? riverZ(x) + side * (1.6 + rand() * 1.0) : riverZ(x) + (rand() - 0.5) * 36;
     if (riverDist(x, z) < 1.4 || roadDistAt(x, z) < 0.5 || Math.hypot(x - VIL.x, z - VIL.z) < 3 || Math.hypot(x - BX, z - BZ) < 3) continue;
     if (forestAmount(x, z) > 0.4 || nearLot(x, z, 0.3)) continue;

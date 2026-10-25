@@ -213,7 +213,7 @@ const GLSL_GROUND_DETAIL = /* glsl */`{
   vec3 floorC = vec3(0.045, 0.052, 0.022) * (0.7 + 0.6*lt_noise(xz*0.8 + 1.0));
   base = mix(base, floorC, smoothstep(0.12, 0.55, vKind.z));
   // roads: packed dirt with wheel ruts and a dry trampled verge
-  vec2 ruv = (xz - vec2(-140.0, -150.0)) / vec2(280.0, 300.0);
+  vec2 ruv = (xz - vec2(-200.0, -220.0)) / vec2(400.0, 440.0);
   vec4 rt = texture2D(uRoadTex, ruv);
   float roadD = rt.r, sideD = rt.g;
   float roadM = 1.0 - smoothstep(0.27, 0.31 + fwidth(roadD)*1.5, roadD);
@@ -296,7 +296,7 @@ function patch(mat, opt = {}) {
           vec4 tc = hexCoords(uTouch.xz / uHexW);
           float sel = 1.0 - step(0.05, length(tc.zw - hc.zw));
           float r = length(vWPos.xz - uTouch.xz);
-          float inB = step(abs(vWPos.x), 100.0) * step(abs(vWPos.z), 121.24);
+          float inB = step(abs(vWPos.x), 160.0) * step(abs(vWPos.z), 177.0);
           float m = max(uTouchAmt * (1.0 - smoothstep(uHexW*1.3, uHexW*3.3, r)), uGridAll*0.45) * inB * (1.0 - 0.5*smoothstep(110.0, 230.0, distance(cameraPosition, vWPos)));
           gl_FragColor.rgb *= mix(1.0, 0.8, uGridAll * (1.0 - inB));
           vec3 lc = vec3(1.0, 0.88, 0.62) * 1.5;
@@ -370,7 +370,7 @@ const MAPJ = await (await fetch('./data/bridge_map.json')).json();
 const HB = new Uint16Array(await (await fetch('./data/bridge_heights.bin')).arrayBuffer());
 const GN = MAPJ.size, GS = MAPJ.spacing_units, GR = MAPJ.half_extent_units, MPU = MAPJ.metres_per_unit;
 const VEX = 1.4;                       // vertical exaggeration: hills read better from a tabletop camera
-const BOARD = { hx: 100, hz: 121.24, hexW: 10 };   // 20 x 28 hexes, hex = 10 units = 125 m
+const BOARD = { hx: 160, hz: 177, hexW: 10 };   // 41 rows x 31-32 hexes (see tools/hex.js), hex = 10 units = 125 m
 const gridV = (i, j) => HB[Math.max(0, Math.min(GN - 1, j)) * GN + Math.max(0, Math.min(GN - 1, i))] * 0.1 + MAPJ.base_m;
 const cr = (p0, p1, p2, p3, t) => 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
 function rawM(x, z) {                  // metres above sea level, smooth (Catmull-Rom) between the 25 m samples
@@ -380,7 +380,11 @@ function rawM(x, z) {                  // metres above sea level, smooth (Catmul
   for (let dj = -1; dj <= 2; dj++) col.push(cr(gridV(i - 1, j + dj), gridV(i, j + dj), gridV(i + 1, j + dj), gridV(i + 2, j + dj), tx));
   return cr(col[0], col[1], col[2], col[3], tz);
 }
-const RIV = MAPJ.river;
+const RIV = MAPJ.river.slice();
+{ // the traced river stops a little short of the bigger board: carry it on upstream along its last direction
+  const n = RIV.length, a = RIV[n - 9], b = RIV[n - 1], sl = (b[1] - a[1]) / (b[0] - a[0]);
+  for (let x = b[0] + 2; x <= 240; x += 2) RIV.push([x, b[1] + sl * (x - b[0])]);
+}
 const riverZ = (x) => {
   const f = (x - RIV[0][0]) / 2, i = Math.max(0, Math.min(RIV.length - 2, Math.floor(f))), t = Math.max(0, Math.min(1, f - i));
   return mix(RIV[i][1], RIV[i + 1][1], t);
@@ -432,7 +436,7 @@ function height(x, z) {
 const slopeAt = (x, z) => { const e = 0.8; return Math.hypot(height(x + e, z) - height(x - e, z), height(x, z + e) - height(x, z - e)) / (2 * e); };
 
 /* Roads: splines through control points, baked into a distance texture so edges stay crisp. */
-const RX0 = -140, RZ0 = -150, RW_U = 280, RH_U = 300, RRES = 4;     // texture covers 280 x 300 units at 4 texels per unit
+const RX0 = -200, RZ0 = -220, RW_U = 400, RH_U = 440, RRES = 3;     // texture covers 400 x 440 units at 3 texels per unit
 const RTW = RW_U * RRES, RTH = RH_U * RRES;
 const roadMain = new Float32Array(RTW * RTH).fill(1), roadSide = new Float32Array(RTW * RTH).fill(1);
 function spline(pts, step = 0.4) {
@@ -458,11 +462,11 @@ function paint(arr, line) {
     }
   }
 }
-const roadA = spline([[BX + 20, -128], [BX + 12, -80], [BX + 5, -40], [BX + 1, BZ - 5], [BX, BZ - 2.4], [BX, BZ + 2.4], [BX - 1, BZ + 5],
-  [VIL.x + 1, VIL.z - 1.5], [VIL.x, VIL.z + 1], [VIL.x - 14, VIL.z + 45], [VIL.x - 22, 128]]);
+const roadA = spline([[BX + 26, -178], [BX + 20, -128], [BX + 12, -80], [BX + 5, -40], [BX + 1, BZ - 5], [BX, BZ - 2.4], [BX, BZ + 2.4], [BX - 1, BZ + 5],
+  [VIL.x + 1, VIL.z - 1.5], [VIL.x, VIL.z + 1], [VIL.x - 14, VIL.z + 45], [VIL.x - 22, 128], [VIL.x - 26, 180]]);
 const roadB = (() => {   // valley road along your bank, passing through the village
   const pts = [];
-  for (let x = -138; x <= 138; x += 14) pts.push([x, riverZ(x) + 6.5 + 1.2 * Math.sin(x * 0.045)]);
+  for (let x = -196; x <= 196; x += 14) pts.push([x, riverZ(x) + 6.5 + 1.2 * Math.sin(x * 0.045)]);
   const near = pts.reduce((b, p, i) => Math.hypot(p[0] - VIL.x, p[1] - VIL.z) < Math.hypot(pts[b][0] - VIL.x, pts[b][1] - VIL.z) ? i : b, 0);
   pts[near] = [VIL.x - 1.5, VIL.z - 1.8];
   return spline(pts);
@@ -485,7 +489,7 @@ const roadTex = (() => {
 U.uRoadTex.value = roadTex;
 
 /* Forest amount, computed once on a 1-unit grid: steep and high ground is wooded, the valley floor is open. */
-const FG_X0 = -170, FG_Z0 = -190, FG_W = 340, FG_H = 380;
+const FG_X0 = -210, FG_Z0 = -230, FG_W = 420, FG_H = 460;
 const forestGrid = new Float32Array(FG_W * FG_H);
 for (let j = 0; j < FG_H; j++) for (let i = 0; i < FG_W; i++) {
   const x = FG_X0 + i + 0.5, z = FG_Z0 + j + 0.5;
@@ -783,15 +787,15 @@ const COL = {
   wheat: lin(0x6c8838), fallow: lin(0x7d6c45), forest: lin(0x2b2a1b), rock: lin(0x726c62),
   road: lin(0x8c8271), mud: lin(0x3b3226), village: lin(0x675d47), ridge: lin(0x5a5838),
 };
-function axis(inner, outerMax) {
+function axis(inner, outerMax, fine = 1) {
   const a = [];
-  for (let v = -inner; v <= inner + 1e-6; v += 1) a.push(v);
+  for (let v = -inner; v <= inner + 1e-6; v += fine) a.push(v);
   let s = 2, v = inner; const hi = [];
   while (v < outerMax) { v += s; s *= 1.25; hi.push(v); }
   return [...hi.reverse().map((q) => -q), ...a, ...hi.reverse()];
 }
 const terrain = (() => {
-  const xs = axis(112, 560), zs = axis(136, 560);
+  const xs = axis(172, 640, 1.5), zs = axis(189, 640, 1.5);
   const NX = xs.length, NZ = zs.length;
   const cnt = NX * NZ;
   const pos = new Float32Array(cnt * 3), col = new Float32Array(cnt * 3), wet = new Float32Array(cnt), kind = new Float32Array(cnt * 4);
@@ -809,7 +813,7 @@ const terrain = (() => {
     c.copy(COL.meadow).lerp(COL.ridge, smooth(2, 9, h - F));
     // field patchwork on the flat valley floor
     const lotA = lotAmount(x, z);
-    const fieldZone = (1 - lotA) * smooth(2.2, 3.2, d) * (1 - smooth(0.11, 0.2, slope)) * (1 - smooth(0.25, 0.5, fa)) * smooth(VIL.r * 0.7, VIL.r * 1.1, Math.hypot(x - VIL.x, z - VIL.z)) * (1 - smooth(120, 135, Math.max(Math.abs(x), Math.abs(z))));
+    const fieldZone = (1 - lotA) * smooth(2.2, 3.2, d) * (1 - smooth(0.11, 0.2, slope)) * (1 - smooth(0.25, 0.5, fa)) * smooth(VIL.r * 0.7, VIL.r * 1.1, Math.hypot(x - VIL.x, z - VIL.z)) * (1 - smooth(180, 200, Math.max(Math.abs(x), Math.abs(z))));
     wet[k] = 0;
     if (fieldZone > 0) wet[k] = 0.3 * fieldZone;          // field colours are drawn per pixel in the ground shader
     wet[k] = Math.max(wet[k], 1 - smooth(0.8, 2.2, d));
@@ -818,13 +822,13 @@ const terrain = (() => {
     c.lerp(COL.rock, smooth(0.35, 0.7, slope) * 0.7);
     const vd = Math.hypot(x - VIL.x, z - VIL.z);
     c.lerp(COL.village, Math.max((1 - smooth(2.5, VIL.r * 0.9, vd)) * 0.5, lotA * 0.7));
-    const far = smooth(112, 150, Math.max(Math.abs(x) * 1.2, Math.abs(z)));
+    const far = smooth(172, 215, Math.max(Math.abs(x) * 1.1, Math.abs(z)));
     c.lerp(COL.forest, far * 0.7);
     kind[k * 4] = (1 - fieldZone) * (1 - fa) * smooth(1.4, 2.0, d) * (1 - smooth(0.25, 0.5, slope)) * smooth(2.5, VIL.r, vd) * (1 - far);
     kind[k * 4 + 1] = Math.max(0, fieldZone) * (1 - fa);
     kind[k * 4 + 2] = fa * (1 - far * 0.5);
     // baked ambient occlusion and ridge light: hollows a little darker, crests a little brighter
-    if (cxm === x && czm === z && Math.abs(x) < 150 && Math.abs(z) < 170) {
+    if (cxm === x && czm === z && Math.abs(x) < 200 && Math.abs(z) < 220) {
       let r1 = 0, r2 = 0;
       for (const [ox, oz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { r1 += height(x + ox * 3, z + oz * 3); r2 += height(x + ox * 10, z + oz * 10); }
       const cv = h - (r1 / 4) * 0.5 - (r2 / 4) * 0.5;
@@ -917,7 +921,7 @@ scene.add(river);
    ============================================================ */
 const treeSpots = { spruce: [], broad: [] }, alleySpots = [];
 {
-  const X0 = -150, X1 = 150, Z0 = -170, Z1 = 170, step = 0.98;
+  const X0 = -190, X1 = 190, Z0 = -210, Z1 = 210, step = 0.98;
   for (let z = Z0; z < Z1; z += step) for (let x = X0; x < X1; x += step) {
     const jx = x + (rand() - 0.5) * step * 0.95, jz = z + (rand() - 0.5) * step * 0.95;
     const f = forestAmount(jx, jz);
@@ -938,8 +942,8 @@ const treeSpots = { spruce: [], broad: [] }, alleySpots = [];
     }
   }
   // lone broadleaf trees along roads, field edges and the river for autumn colour
-  for (let i = 0; i < 700; i++) {
-    const x = (rand() - 0.5) * 240, r = rand(), side = rand() < 0.5 ? -1 : 1;
+  for (let i = 0; i < 1100; i++) {
+    const x = (rand() - 0.5) * 380, r = rand(), side = rand() < 0.5 ? -1 : 1;
     const z = r < 0.5 ? riverZ(x) + side * (1.6 + rand() * 1.0) : riverZ(x) + (rand() - 0.5) * 36;
     if (riverDist(x, z) < 1.4 || roadDistAt(x, z) < 0.5 || Math.hypot(x - VIL.x, z - VIL.z) < 3 || Math.hypot(x - BX, z - BZ) < 3) continue;
     if (forestAmount(x, z) > 0.4 || nearLot(x, z, 0.3)) continue;
@@ -1449,9 +1453,9 @@ function fsPass(mat, rt) { quad.material = mat; renderer.setRenderTarget(rt); re
 /* ============================================================
    14. CAMERA: drag to turn, pinch to zoom, swoop low when close
    ============================================================ */
-const cam = { yaw: 1.75, pitchOff: 0, dist: 95, tx: 0, tz: 4 };
+const cam = { yaw: 1.75, pitchOff: 0, dist: 120, tx: 0, tz: 4 };
 let camAnim = null;
-const DMIN = 4, DMAX = 150;
+const DMIN = 4, DMAX = 240;
 function autoPitch(dist) { const t = smooth(0, 1, (dist - DMIN) / (DMAX - DMIN)); return mix(0.1, cur.pitchMax, Math.pow(t, 0.7)); }
 let groundY = height(cam.tx, cam.tz), camPitchUsed = 0.5;
 function updateCamera(dt) {
@@ -1497,7 +1501,7 @@ function updateCamera(dt) {
 }
 function flyTo(to, dur = 1.6) { camAnim = { t: 0, dur, from: { ...cam }, to: { ...cam, ...to } }; }
 const VIEWS = {
-  over: { dist: 95, pitchOff: 0, tx: 0, tz: 4, yaw: 1.75 },
+  over: { dist: 120, pitchOff: 0, tx: 0, tz: 4, yaw: 1.75 },
   low:  { dist: 15, pitchOff: -0.08, tx: BX, tz: BZ - 1.5, yaw: 1.05 },
 };
 document.getElementById('vOver').addEventListener('click', () => flyTo(VIEWS.over, 2.2));

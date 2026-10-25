@@ -22,13 +22,13 @@ render = render.replace("uniform vec3 uTouch; uniform float uTouchAmt; uniform f
 render = render.replace("${opt.ground ? 'varying vec4 vKind; uniform float uSandy;' : ''}", "${opt.ground ? 'varying vec4 vKind; uniform float uSandy; uniform sampler2D uRoadTex;' : ''}")
 render = render.replace("if (uTouchAmt > 0.001) {", "if (uTouchAmt > 0.001 || uGridAll > 0.001) {")
 render = render.replace("float m = uTouchAmt * (1.0 - smoothstep(uHexW*1.3, uHexW*3.3, r));",
-  "float inB = step(abs(vWPos.x), 100.0) * step(abs(vWPos.z), 121.24);\n          float m = max(uTouchAmt * (1.0 - smoothstep(uHexW*1.3, uHexW*3.3, r)), uGridAll*0.45) * inB * (1.0 - 0.5*smoothstep(110.0, 230.0, distance(cameraPosition, vWPos)));\n          gl_FragColor.rgb *= mix(1.0, 0.8, uGridAll * (1.0 - inB));")
+  "float inB = step(abs(vWPos.x), 160.0) * step(abs(vWPos.z), 177.0);\n          float m = max(uTouchAmt * (1.0 - smoothstep(uHexW*1.3, uHexW*3.3, r)), uGridAll*0.45) * inB * (1.0 - 0.5*smoothstep(110.0, 230.0, distance(cameraPosition, vWPos)));\n          gl_FragColor.rgb *= mix(1.0, 0.8, uGridAll * (1.0 - inB));")
 render = render.replace("sel * uTouchAmt;", "sel * uTouchAmt * inB;")
 # new ground detail: roads come from the baked texture
 a = render.index("  // roads and railway bed")
 b = render.index("  diffuseColor.rgb *= 0.88 + 0.14*n2 + 0.08*n3;")
 road = """  // roads and tracks: distance to the nearest road, baked into a texture (units)
-  vec2 ruv = (xz - vec2(-140.0, -150.0)) / vec2(280.0, 300.0);
+  vec2 ruv = (xz - vec2(-200.0, -220.0)) / vec2(400.0, 440.0);
   vec4 rt = texture2D(uRoadTex, ruv);
   float roadD = rt.r, sideD = rt.g;
   vec3 dirtC = vec3(0.30, 0.25, 0.17) * (0.9 + 0.2*n2);

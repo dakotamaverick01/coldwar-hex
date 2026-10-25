@@ -7,7 +7,7 @@ const MAPJ = await (await fetch('./data/bridge_map.json')).json();
 const HB = new Uint16Array(await (await fetch('./data/bridge_heights.bin')).arrayBuffer());
 const GN = MAPJ.size, GS = MAPJ.spacing_units, GR = MAPJ.half_extent_units, MPU = MAPJ.metres_per_unit;
 const VEX = 1.4;                       // vertical exaggeration: hills read better from a tabletop camera
-const BOARD = { hx: 100, hz: 121.24, hexW: 10 };   // 20 x 28 hexes, hex = 10 units = 125 m
+const BOARD = { hx: 160, hz: 177, hexW: 10 };   // 41 rows x 31-32 hexes (see tools/hex.js), hex = 10 units = 125 m
 const gridV = (i, j) => HB[Math.max(0, Math.min(GN - 1, j)) * GN + Math.max(0, Math.min(GN - 1, i))] * 0.1 + MAPJ.base_m;
 const cr = (p0, p1, p2, p3, t) => 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
 function rawM(x, z) {                  // metres above sea level, smooth (Catmull-Rom) between the 25 m samples
@@ -17,7 +17,11 @@ function rawM(x, z) {                  // metres above sea level, smooth (Catmul
   for (let dj = -1; dj <= 2; dj++) col.push(cr(gridV(i - 1, j + dj), gridV(i, j + dj), gridV(i + 1, j + dj), gridV(i + 2, j + dj), tx));
   return cr(col[0], col[1], col[2], col[3], tz);
 }
-const RIV = MAPJ.river;
+const RIV = MAPJ.river.slice();
+{ // the traced river stops a little short of the bigger board: carry it on upstream along its last direction
+  const n = RIV.length, a = RIV[n - 9], b = RIV[n - 1], sl = (b[1] - a[1]) / (b[0] - a[0]);
+  for (let x = b[0] + 2; x <= 240; x += 2) RIV.push([x, b[1] + sl * (x - b[0])]);
+}
 const riverZ = (x) => {
   const f = (x - RIV[0][0]) / 2, i = Math.max(0, Math.min(RIV.length - 2, Math.floor(f))), t = Math.max(0, Math.min(1, f - i));
   return mix(RIV[i][1], RIV[i + 1][1], t);
@@ -69,7 +73,7 @@ function height(x, z) {
 const slopeAt = (x, z) => { const e = 0.8; return Math.hypot(height(x + e, z) - height(x - e, z), height(x, z + e) - height(x, z - e)) / (2 * e); };
 
 /* Roads: splines through control points, baked into a distance texture so edges stay crisp. */
-const RX0 = -140, RZ0 = -150, RW_U = 280, RH_U = 300, RRES = 4;     // texture covers 280 x 300 units at 4 texels per unit
+const RX0 = -200, RZ0 = -220, RW_U = 400, RH_U = 440, RRES = 3;     // texture covers 400 x 440 units at 3 texels per unit
 const RTW = RW_U * RRES, RTH = RH_U * RRES;
 const roadMain = new Float32Array(RTW * RTH).fill(1), roadSide = new Float32Array(RTW * RTH).fill(1);
 function spline(pts, step = 0.4) {
@@ -95,11 +99,11 @@ function paint(arr, line) {
     }
   }
 }
-const roadA = spline([[BX + 20, -128], [BX + 12, -80], [BX + 5, -40], [BX + 1, BZ - 5], [BX, BZ - 2.4], [BX, BZ + 2.4], [BX - 1, BZ + 5],
-  [VIL.x + 1, VIL.z - 1.5], [VIL.x, VIL.z + 1], [VIL.x - 14, VIL.z + 45], [VIL.x - 22, 128]]);
+const roadA = spline([[BX + 26, -178], [BX + 20, -128], [BX + 12, -80], [BX + 5, -40], [BX + 1, BZ - 5], [BX, BZ - 2.4], [BX, BZ + 2.4], [BX - 1, BZ + 5],
+  [VIL.x + 1, VIL.z - 1.5], [VIL.x, VIL.z + 1], [VIL.x - 14, VIL.z + 45], [VIL.x - 22, 128], [VIL.x - 26, 180]]);
 const roadB = (() => {   // valley road along your bank, passing through the village
   const pts = [];
-  for (let x = -138; x <= 138; x += 14) pts.push([x, riverZ(x) + 6.5 + 1.2 * Math.sin(x * 0.045)]);
+  for (let x = -196; x <= 196; x += 14) pts.push([x, riverZ(x) + 6.5 + 1.2 * Math.sin(x * 0.045)]);
   const near = pts.reduce((b, p, i) => Math.hypot(p[0] - VIL.x, p[1] - VIL.z) < Math.hypot(pts[b][0] - VIL.x, pts[b][1] - VIL.z) ? i : b, 0);
   pts[near] = [VIL.x - 1.5, VIL.z - 1.8];
   return spline(pts);
@@ -122,7 +126,7 @@ const roadTex = (() => {
 U.uRoadTex.value = roadTex;
 
 /* Forest amount, computed once on a 1-unit grid: steep and high ground is wooded, the valley floor is open. */
-const FG_X0 = -170, FG_Z0 = -190, FG_W = 340, FG_H = 380;
+const FG_X0 = -210, FG_Z0 = -230, FG_W = 420, FG_H = 460;
 const forestGrid = new Float32Array(FG_W * FG_H);
 for (let j = 0; j < FG_H; j++) for (let i = 0; i < FG_W; i++) {
   const x = FG_X0 + i + 0.5, z = FG_Z0 + j + 0.5;

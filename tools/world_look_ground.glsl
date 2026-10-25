@@ -59,7 +59,7 @@ const GLSL_GROUND_DETAIL = /* glsl */`{
   vec3 floorC = vec3(0.045, 0.052, 0.022) * (0.7 + 0.6*lt_noise(xz*0.8 + 1.0));
   base = mix(base, floorC, smoothstep(0.12, 0.55, vKind.z));
   // roads: packed dirt with wheel ruts and a dry trampled verge
-  vec2 ruv = (xz - vec2(-140.0, -150.0)) / vec2(280.0, 300.0);
+  vec2 ruv = (xz - vec2(-200.0, -220.0)) / vec2(400.0, 440.0);
   vec4 rt = texture2D(uRoadTex, ruv);
   float roadD = rt.r, sideD = rt.g;
   float roadM = 1.0 - smoothstep(0.27, 0.31 + fwidth(roadD)*1.5, roadD);
