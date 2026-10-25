@@ -13,6 +13,9 @@ world = open('tools/build_bridge_page_world.js').read()
 _bk = open('tools/world_buildings.js').read().split('//@@END_PLAN@@')
 scene = open('tools/build_bridge_page_scene.js').read().replace('//@@DETAIL_TREES@@', open('tools/world_trees_detail.js').read()).replace('//@@VILLAGE_PLAN@@', _bk[0]).replace('//@@BUILDINGS@@', _bk[1])
 cam = open('tools/build_bridge_page_cam.js').read()
+_hx = open('tools/hex.js').read().replace('export const ', 'const ').replace('export function ', 'function ')
+hexjs = 'const HX = (() => {\n' + _hx + '\nreturn { HEX_W, ROW_DZ, BOARD, hexCenter, hexKey, pointToHex, neighbors, hexDistance, onBoard, boardHexes, hexesWithin, hexRing, line };\n})();\n'
+units = open('tools/build_bridge_page_units.js').read()
 
 # ---- render section edits ----
 render = render.replace("new THREE.PerspectiveCamera(50, 1, 0.05, 420)", "new THREE.PerspectiveCamera(35, 1, 0.2, 1400)")
@@ -70,7 +73,7 @@ render = render.replace("gl_FragColor.rgb = applyFog(gl_FragColor.rgb, vWPos);",
 render = render.replace("        ${opt.tuft ? `{\n          #ifdef USE_INSTANCING\n            vec3 ipos", "        ${opt.flutter ? `transformed += vec3(sin(uTime*5.0 + position.x*45.0 + position.y*30.0), sin(uTime*6.1 + position.z*40.0)*0.5, cos(uTime*4.3 + position.z*45.0)) * 0.004 * max(transformed.y, 0.0);` : ''}\n        ${opt.tuft ? `{\n          #ifdef USE_INSTANCING\n            vec3 ipos", 1)
 # give every patched material a cache key from its options, so different patches never share a shader by accident
 render = render.replace("  };\n  return mat;\n}\nfunction patchDepth", "  };\n  mat.customProgramCacheKey = () => 'p' + JSON.stringify(opt);\n  return mat;\n}\nfunction patchDepth", 1)
-out = head + noise + '\n' + render + '\n' + world + '\n' + helpers + '\n' + maketrees + '\n' + roof + '\n' + scene + '\n' + lp + '\n' + cam
+out = head + noise + '\n' + render + '\n' + world + '\n' + helpers + '\n' + maketrees + '\n' + roof + '\n' + scene + '\n' + lp + '\n' + cam.replace('renderer.setAnimationLoop(frame);', hexjs + units + '\nrenderer.setAnimationLoop(frame);', 1)
 open('mission-bridge.html', 'w').write(out)
 print('written', len(out))
 

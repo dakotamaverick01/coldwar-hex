@@ -162,6 +162,7 @@ function frame() {
   U.uTouchAmt.value = touchFade;
   U.uGridAll.value += (gridTarget() - U.uGridAll.value) * Math.min(1, dt * 6);
   updateCamera(dt);
+  gameTick(dt);
   updateTreeLOD(now);
   sky.position.copy(camera.position);
 
